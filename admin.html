@@ -300,7 +300,7 @@ async function processFile(file) {
     var meta = await pdf.getMetadata();
     var subject = meta.info && meta.info.Subject;
     if (!subject) {
-      showToast(file.name + ' : pas de donnees');
+      showToast(file.name + ' : pas de données');
       return;
     }
     var data = JSON.parse(subject);
@@ -521,7 +521,7 @@ function importCode() {
     rows.push(flattenData(data, 'code-import', code));
     renderTable();
     input.value = '';
-    showToast('Code importe');
+    showToast('Code importé');
   } catch (err) {
     console.error('Code import error:', err);
     showToast('Erreur de decodage');
