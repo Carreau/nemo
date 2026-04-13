@@ -824,6 +824,7 @@ function fillFormFromData(data) {
         end: d.end ? timeToMins(d.end) || DEFAULT_END : DEFAULT_END,
       };
     });
+    skipDayStateRead = true;
     rebuildDays();
   }
 
