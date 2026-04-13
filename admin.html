@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin – Fiches de Voeux</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -123,6 +124,14 @@ td.empty { color: var(--muted); font-style: italic; }
   <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg>
   Glisser un ou plusieurs PDF ici, ou <u>cliquer pour parcourir</u>
   <input type="file" id="fileInput" multiple accept=".pdf">
+</div>
+
+<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:20px;">
+  <div style="flex:1;">
+    <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Importer un code texte</label>
+    <input type="text" id="codeInput" placeholder="Coller un code N1... ici" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:8px 11px;font-size:13px;font-family:monospace;margin-top:4px;outline:none;">
+  </div>
+  <button class="btn" onclick="importCode()" style="margin-bottom:0;">Importer</button>
 </div>
 
 <div class="toolbar" id="toolbar" style="display:none;">
@@ -327,6 +336,92 @@ function copyCSV() {
 function clearAll() {
   rows.length = 0;
   renderTable();
+}
+
+// Binary code decoder (matches fiche-voeux.js encodeQRBinary)
+var SLOT_ORDER = [];
+['matin','AM'].forEach(function(p) { ['lundi','mardi','mercredi','jeudi','vendredi'].forEach(function(d) { SLOT_ORDER.push(d + '_' + p); }); });
+
+function minsToTime(m) {
+  return Math.floor(m/60) + 'h' + String(m%60).padStart(2,'0');
+}
+
+function decodeQRBinary(str) {
+  if (!str || !str.startsWith('N1')) return null;
+  var raw = atob(str.slice(2));
+  var buf = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
+  var pos = 0;
+
+  var flags = buf[pos++];
+  var structIdx = flags & 3;
+  var typeIdx   = (flags >> 2) & 3;
+  var vac       = (flags >> 4) & 1;
+  var permChoice = (flags >> 5) & 3;
+  var dateIsExpected = (flags >> 7) & 1;
+  var dayBits = buf[pos++];
+
+  var dec = new TextDecoder();
+  var strings = [];
+  for (var s = 0; s < 3; s++) {
+    var len = buf[pos++];
+    strings.push(dec.decode(buf.slice(pos, pos + len)));
+    pos += len;
+  }
+
+  var structNames = [null, 'petit_nemo', 'baby_nemo', 'indifferent'];
+  var typeNames   = [null, 'regulier', 'occasionnel'];
+  var dayNames    = ['lundi','mardi','mercredi','jeudi','vendredi'];
+  var days = [];
+  for (var di = 0; di < 5; di++) {
+    if (dayBits & (1 << di)) {
+      var sv = buf[pos++] * 15 + 450;
+      var ev = buf[pos++] * 15 + 450;
+      days.push({ day: dayNames[di], selected: true, start: minsToTime(sv), end: minsToTime(ev) });
+    } else {
+      days.push({ day: dayNames[di], selected: false, start: null, end: null });
+    }
+  }
+
+  var permData = { choice: null, keep: null, changeRanks: {} };
+  if (permChoice === 1) {
+    permData.choice = 'keep';
+    permData.keep = SLOT_ORDER[buf[pos++]];
+  } else if (permChoice === 2) {
+    permData.choice = 'change';
+    var count = buf[pos++];
+    for (var ri = 0; ri < count; ri++) {
+      var slot = SLOT_ORDER[buf[pos++]];
+      var rank = buf[pos++];
+      permData.changeRanks[slot] = rank;
+    }
+  }
+
+  return {
+    child: { lastName: strings[0], firstName: strings[1], date: strings[2] || '', dateType: dateIsExpected ? 'expected' : strings[2] ? 'birth' : null },
+    structure: structNames[structIdx],
+    typeAccueil: typeNames[typeIdx],
+    days: days,
+    vacScolaires: !!vac,
+    permanence: permData,
+  };
+}
+
+function importCode() {
+  var input = document.getElementById('codeInput');
+  var code = input.value.trim();
+  if (!code) return;
+  try {
+    var data = decodeQRBinary(code);
+    if (!data) { showToast('Code invalide'); return; }
+    rows.push(flattenData(data, 'code-import'));
+    renderTable();
+    input.value = '';
+    showToast('Code importe');
+  } catch (err) {
+    console.error('Code import error:', err);
+    showToast('Erreur de decodage');
+  }
 }
 
 function showToast(msg) {

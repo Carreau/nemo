@@ -50,44 +50,29 @@ data = json.loads(str(pdf.docinfo['/Subject']))
 pdfinfo file.pdf | grep Subject
 ```
 
-### JSON schema
+### Compact JSON schema (v1)
+
+The data is stored as a positional array to minimize size:
 
 ```json
-{
-  "version": "2026-2027",
-  "child": {
-    "lastName": "Martin",
-    "firstName": "Lea",
-    "date": "2025-03-15",
-    "dateType": "birth"
-  },
-  "structure": "petit_nemo",
-  "typeAccueil": "regulier",
-  "days": [
-    { "day": "Lundi", "selected": true, "start": 510, "end": 1020 },
-    { "day": "Mardi", "selected": false, "start": null, "end": null },
-    ...
-  ],
-  "vacScolaires": false,
-  "permanence": {
-    "choice": "change",
-    "keep": null,
-    "changeRanks": { "lundi_matin": 1, "mardi_AM": 2 }
-  }
-}
+[1,["Martin","Lea","2025-03-15","b"],"p","r",[["8h30","17h00"],null,null,["9h00","16h30"],null],0,["c",{"lundi_matin":1,"mardi_AM":2}]]
 ```
 
-| Field | Values |
-|---|---|
-| `child.dateType` | `"birth"` (past/today) or `"expected"` (future), `null` if empty |
-| `structure` | `"petit_nemo"`, `"baby_nemo"`, `"indifferent"`, or `null` |
-| `typeAccueil` | `"regulier"`, `"occasionnel"`, or `null` |
-| `days[].start/end` | Minutes since midnight (e.g. 510 = 8h30, 1020 = 17h00), `null` if day not selected |
-| `permanence.choice` | `"keep"` or `"change"`, `null` if neither selected |
-| `permanence.keep` | e.g. `"lundi_matin"`, `"jeudi_AM"`, `null` if not applicable |
-| `permanence.changeRanks` | Object mapping slot IDs to rank numbers (1 = most preferred) |
+Format: `[version, child, structure, type, days, vac, permanence]`
 
-Period suffixes: `_matin` = morning (9h-12h30), `_AM` = afternoon (14h30-18h).
+| Index | Field | Format |
+|---|---|---|
+| `0` | Schema version | Always `1` |
+| `1` | Child | `[lastName, firstName, date, dateType]` -- dateType: `"b"`=birth, `"e"`=expected, `null` |
+| `2` | Structure | `"p"`=Petit Nemo, `"b"`=Baby Nemo, `"i"`=indifferent, `null` |
+| `3` | Type | `"r"`=regulier, `"o"`=occasionnel, `null` |
+| `4` | Days | Array of 5 (Mon-Fri): `null` if not selected, or `["8h30","17h00"]` |
+| `5` | Vac. scolaires | `1` or `0` |
+| `6` | Permanence | `null`, `["k","lundi_matin"]` (keep), or `["c",{slot:rank,...}]` (change) |
+
+Period suffixes in slot IDs: `_matin` = morning (9h-12h30), `_AM` = afternoon (14h30-18h).
+
+Both the form (drag-to-refill) and admin page auto-detect and decode this format.
 
 ## Architecture
 
@@ -110,6 +95,7 @@ Open `fiche-voeux.html` in any modern browser. Fill in the form and click **Tele
 fiche-voeux.html                    # HTML structure (form markup)
 fiche-voeux.css                     # All styles
 fiche-voeux.js                      # i18n, UI logic, PDF generation
+admin.html                          # Admin page: batch PDF import → spreadsheet view
 PN - Fiche de Voeux 2026-2027.pdf   # Original reference PDF form
 ```
 

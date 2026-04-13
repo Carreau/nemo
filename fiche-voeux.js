@@ -249,6 +249,7 @@ function rebuildDays() {
 function toggleDay(d) {
   const on = document.getElementById(`day_${d}`).checked;
   document.getElementById(`row_${d}`).classList.toggle('active', on);
+  if (typeof scheduleQR === 'function') scheduleQR();
 }
 
 /* ──────────────────────────────────────────────
@@ -290,6 +291,7 @@ function rebuildPermKeepGrid() {
 function togglePermKeep(id) {
   permKeepSelected = (permKeepSelected === id) ? null : id;
   rebuildPermKeepGrid();
+  if (typeof scheduleQR === 'function') scheduleQR();
 }
 
 /* ──────────────────────────────────────────────
@@ -345,6 +347,7 @@ function togglePermRank(id) {
     permRanks[id] = maxRank + 1;
   }
   rebuildPermGrid();
+  if (typeof scheduleQR === 'function') scheduleQR();
 }
 
 /* ──────────────────────────────────────────────
@@ -400,6 +403,7 @@ function selectPerm(v) {
   document.getElementById('permChange').checked = v === 'change';
   document.getElementById('permKeepOpt').classList.toggle('selected',   v === 'keep');
   document.getElementById('permChangeOpt').classList.toggle('selected', v === 'change');
+  if (typeof scheduleQR === 'function') scheduleQR();
 }
 
 /* ──────────────────────────────────────────────
@@ -417,6 +421,205 @@ if (checkedPerm) selectPerm(checkedPerm.value);
 if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
+
+/* ──────────────────────────────────────────────
+   QR Code — live preview
+────────────────────────────────────────────── */
+const qrCanvas = document.getElementById('qrPreview');
+const qr = typeof QRious !== 'undefined' ? new QRious({ element: qrCanvas, size: 120, level: 'L' }) : null;
+
+function buildCompactData() {
+  const STRUCT_MAP = { petit_nemo:'p', baby_nemo:'b', indifferent:'i' };
+  const TYPE_MAP   = { regulier:'r', occasionnel:'o' };
+  const structVal  = radio('structure');
+  const typeVal    = radio('typeAccueil');
+  const childDate  = val('childDate');
+  let dateType = null;
+  if (childDate) {
+    const t = new Date(); t.setHours(0,0,0,0);
+    dateType = new Date(childDate + 'T00:00:00') <= t ? 'b' : 'e';
+  }
+  const days = T.fr.days.map(day => {
+    const d = day.toLowerCase();
+    const on = chk(`day_${d}`);
+    return on ? [minsToTime(parseInt(val(`${d}_start`) || DEFAULT_START)),
+                 minsToTime(parseInt(val(`${d}_end`)   || DEFAULT_END))] : null;
+  });
+  const pc = radio('permanence');
+  let permData = null;
+  if (pc === 'keep' && permKeepSelected) {
+    permData = ['k', permKeepSelected.replace('keep_', '')];
+  } else if (pc === 'change' && Object.keys(permRanks).length) {
+    const ranks = {};
+    Object.entries(permRanks).forEach(([id, rank]) => { ranks[id.replace('perm_', '')] = rank; });
+    permData = ['c', ranks];
+  }
+  return [
+    1,
+    [val('childLastName'), val('childFirstName'), childDate || null, dateType],
+    STRUCT_MAP[structVal] || null,
+    TYPE_MAP[typeVal] || null,
+    days,
+    chk('vacScolaires') ? 1 : 0,
+    permData,
+  ];
+}
+
+/* ──────────────────────────────────────────────
+   Binary QR encoding — minimizes QR density
+   Format: "N1" + base64(bitflags + varint-prefixed strings + packed slots)
+
+   Byte layout:
+     [0]    flags: bits 0-1=struct(0=none,1=p,2=b,3=i), 2-3=type(0=none,1=r,2=o),
+            4=vac, 5-6=perm(0=none,1=keep,2=change), 7=dateType(0=birth,1=expected)
+     [1]    dayBits: bit0=lundi..bit4=vendredi selected
+     [2..n] varint-len prefixed UTF-8 strings: lastName, firstName, date
+     then for each selected day: 2 bytes (start mins/15, end mins/15) — offset from 450
+     then perm data: if keep: 1 byte slotIndex; if change: N bytes (count + slotIndex,rank pairs)
+────────────────────────────────────────────── */
+const SLOT_ORDER = [];
+['matin','AM'].forEach(p => { ['lundi','mardi','mercredi','jeudi','vendredi'].forEach(d => { SLOT_ORDER.push(d + '_' + p); }); });
+
+function encodeQRBinary(compact) {
+  const [, child, struct, type, days, vac, perm] = compact;
+  const buf = [];
+
+  // Flags byte
+  const structMap = { p:1, b:2, i:3 };
+  const typeMap   = { r:1, o:2 };
+  let flags = (structMap[struct] || 0);
+  flags |= (typeMap[type] || 0) << 2;
+  flags |= (vac ? 1 : 0) << 4;
+  const permChoice = perm ? (perm[0] === 'k' ? 1 : perm[0] === 'c' ? 2 : 0) : 0;
+  flags |= permChoice << 5;
+  flags |= (child[3] === 'e' ? 1 : 0) << 7;
+  buf.push(flags);
+
+  // Day bits
+  let dayBits = 0;
+  for (let i = 0; i < 5; i++) { if (days[i]) dayBits |= (1 << i); }
+  buf.push(dayBits);
+
+  // Varint-prefixed strings
+  const enc = new TextEncoder();
+  [child[0] || '', child[1] || '', child[2] || ''].forEach(s => {
+    const bytes = enc.encode(s);
+    buf.push(bytes.length);
+    for (let i = 0; i < bytes.length; i++) buf.push(bytes[i]);
+  });
+
+  // Day times: each selected day = 2 bytes (start-offset/15, end-offset/15)
+  for (let i = 0; i < 5; i++) {
+    if (days[i]) {
+      const s = timeToMins(days[i][0]) || 450;
+      const e = timeToMins(days[i][1]) || 1080;
+      buf.push(Math.round((s - 450) / 15));
+      buf.push(Math.round((e - 450) / 15));
+    }
+  }
+
+  // Permanence
+  if (permChoice === 1 && perm[1]) {
+    buf.push(SLOT_ORDER.indexOf(perm[1]));
+  } else if (permChoice === 2 && perm[1]) {
+    const entries = Object.entries(perm[1]).sort((a,b) => a[1] - b[1]);
+    buf.push(entries.length);
+    entries.forEach(([slot, rank]) => {
+      buf.push(SLOT_ORDER.indexOf(slot));
+      buf.push(rank);
+    });
+  }
+
+  // Encode as "N1" prefix + base64
+  const u8 = new Uint8Array(buf);
+  let b64 = '';
+  for (let i = 0; i < u8.length; i++) b64 += String.fromCharCode(u8[i]);
+  return 'N1' + btoa(b64);
+}
+
+function decodeQRBinary(str) {
+  if (!str.startsWith('N1')) return null;
+  const raw = atob(str.slice(2));
+  const buf = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
+  let pos = 0;
+
+  const flags = buf[pos++];
+  const structIdx = flags & 3;
+  const typeIdx   = (flags >> 2) & 3;
+  const vac       = (flags >> 4) & 1;
+  const permChoice = (flags >> 5) & 3;
+  const dateIsExpected = (flags >> 7) & 1;
+
+  const dayBits = buf[pos++];
+
+  // Read strings
+  const dec = new TextDecoder();
+  const strings = [];
+  for (let s = 0; s < 3; s++) {
+    const len = buf[pos++];
+    strings.push(dec.decode(buf.slice(pos, pos + len)));
+    pos += len;
+  }
+
+  // Days
+  const structRev = [null, 'p', 'b', 'i'];
+  const typeRev   = [null, 'r', 'o'];
+  const days = [];
+  for (let i = 0; i < 5; i++) {
+    if (dayBits & (1 << i)) {
+      const s = buf[pos++] * 15 + 450;
+      const e = buf[pos++] * 15 + 450;
+      days.push([minsToTime(s), minsToTime(e)]);
+    } else {
+      days.push(null);
+    }
+  }
+
+  // Permanence
+  let permData = null;
+  if (permChoice === 1) {
+    permData = ['k', SLOT_ORDER[buf[pos++]]];
+  } else if (permChoice === 2) {
+    const count = buf[pos++];
+    const ranks = {};
+    for (let i = 0; i < count; i++) {
+      const slot = SLOT_ORDER[buf[pos++]];
+      const rank = buf[pos++];
+      ranks[slot] = rank;
+    }
+    permData = ['c', ranks];
+  }
+
+  return [
+    1,
+    [strings[0], strings[1], strings[2] || null, dateIsExpected ? 'e' : strings[2] ? 'b' : null],
+    structRev[structIdx],
+    typeRev[typeIdx],
+    days,
+    vac,
+    permData,
+  ];
+}
+
+function updateQR() {
+  const compact = buildCompactData();
+  const code = encodeQRBinary(compact);
+  if (qr) qr.value = code;
+  const codeEl = document.getElementById('importCode');
+  if (codeEl) codeEl.textContent = code;
+}
+
+// Debounced live update
+let qrTimer = null;
+function scheduleQR() { clearTimeout(qrTimer); qrTimer = setTimeout(updateQR, 300); }
+
+// Listen to all form changes
+document.querySelector('.form-body').addEventListener('input', scheduleQR);
+document.querySelector('.form-body').addEventListener('change', scheduleQR);
+
+// Initial QR
+updateQR();
 
 /* ──────────────────────────────────────────────
    Helpers
@@ -731,48 +934,50 @@ function generatePDF() {
   ];
   footer.forEach(line => { doc.text(line, ML, y, { maxWidth: CW }); y += 4.5; });
 
-  // ── Embed form data as JSON in PDF metadata ──
-  const formData = {
-    version: '2026-2027',
-    child: {
-      lastName: val('childLastName'),
-      firstName: val('childFirstName'),
-      date: val('childDate'),
-      dateType: (() => {
-        if (!val('childDate')) return null;
-        const t = new Date(); t.setHours(0,0,0,0);
-        return new Date(val('childDate') + 'T00:00:00') <= t ? 'birth' : 'expected';
-      })(),
-    },
-    structure: radio('structure') || null,
-    typeAccueil: radio('typeAccueil') || null,
-    days: T.fr.days.map((day, i) => {
-      const d = day.toLowerCase();
-      const on = chk(`day_${d}`);
-      return {
-        day: day,
-        selected: on,
-        start: on ? minsToTime(parseInt(val(`${d}_start`) || DEFAULT_START)) : null,
-        end: on ? minsToTime(parseInt(val(`${d}_end`) || DEFAULT_END)) : null,
-      };
-    }),
-    vacScolaires: chk('vacScolaires'),
+  // ── Embed form data in PDF ──
+  const compactData = buildCompactData();
+
+  // Expanded JSON for PDF metadata (human-readable)
+  const DAY_NAMES = ['lundi','mardi','mercredi','jeudi','vendredi'];
+  const STRUCT_FULL = { p:'petit_nemo', b:'baby_nemo', i:'indifferent' };
+  const TYPE_FULL   = { r:'regulier', o:'occasionnel' };
+  const cd = compactData;
+  const expandedData = {
+    child: { lastName: cd[1][0], firstName: cd[1][1], date: cd[1][2], dateType: cd[1][3] === 'b' ? 'birth' : cd[1][3] === 'e' ? 'expected' : null },
+    structure: STRUCT_FULL[cd[2]] || null,
+    typeAccueil: TYPE_FULL[cd[3]] || null,
+    days: DAY_NAMES.map((d, i) => ({ day: d, selected: !!cd[4][i], start: cd[4][i] ? cd[4][i][0] : null, end: cd[4][i] ? cd[4][i][1] : null })),
+    vacScolaires: !!cd[5],
     permanence: {
-      choice: radio('permanence') || null,
-      keep: permKeepSelected ? permKeepSelected.replace('keep_', '') : null,
-      changeRanks: Object.fromEntries(
-        Object.entries(permRanks)
-          .sort((a,b) => a[1] - b[1])
-          .map(([id, rank]) => [id.replace('perm_', ''), rank])
-      ),
+      choice: cd[6] ? (cd[6][0] === 'k' ? 'keep' : 'change') : null,
+      keep: cd[6] && cd[6][0] === 'k' ? cd[6][1] : null,
+      changeRanks: cd[6] && cd[6][0] === 'c' ? cd[6][1] : {},
     },
   };
 
   doc.setProperties({
     title: 'Fiche de V\u0153ux \u2013 Petit N\u00e9mo 2026\u20132027',
-    subject: JSON.stringify(formData),
+    subject: JSON.stringify(expandedData),
     creator: 'Petit N\u00e9mo \u2013 Fiche de V\u0153ux',
   });
+
+  // ── QR code (compact binary) on lower right ──
+  if (typeof QRious !== 'undefined') {
+    const qrPdf = new QRious({ size: 256, level: 'L', value: encodeQRBinary(compactData) });
+    const qrImg = qrPdf.toDataURL('image/png');
+    const qrSize = 25;
+    const qrX = PW - ML - qrSize;
+    const qrY = 297 - 10 - qrSize;
+    doc.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize);
+
+    // Import code text next to QR
+    const codeStr = encodeQRBinary(compactData);
+    tc(...C.muted); font('normal', 5);
+    doc.text('Code d\'import :', ML, qrY);
+    font('normal', 5.5); tc(...C.black);
+    const codeLines = doc.splitTextToSize(codeStr, qrX - ML - 4);
+    doc.text(codeLines, ML, qrY + 4);
+  }
 
   // Build filename: Fiche_Voeux_PetitNemo_2026-2027_{LastName}_{date}.pdf
   const lastName = val('childLastName').trim().replace(/\s+/g, '_') || 'enfant';
@@ -827,6 +1032,7 @@ function timeToMins(s) {
 }
 
 function fillFormFromData(data) {
+
   // Child info
   if (data.child) {
     document.getElementById('childLastName').value = data.child.lastName || '';
@@ -850,7 +1056,8 @@ function fillFormFromData(data) {
   // Days
   if (data.days) {
     data.days.forEach(d => {
-      const key = d.day.toLowerCase();
+      const key = (d.day || '').toLowerCase();
+      if (!key) return;
       dayState[key] = {
         checked: d.selected,
         start: d.start ? timeToMins(d.start) || DEFAULT_START : DEFAULT_START,
@@ -883,6 +1090,48 @@ function fillFormFromData(data) {
       rebuildPermGrid();
     }
   }
+  updateQR();
+}
+
+/* ──────────────────────────────────────────────
+   Import from text code
+────────────────────────────────────────────── */
+function importFromCode() {
+  const input = document.getElementById('codeInput');
+  const code = input.value.trim();
+  if (!code) return;
+  try {
+    const compact = decodeQRBinary(code);
+    if (!compact) return;
+    const data = expandCompactToObj(compact);
+    fillFormFromData(data);
+    input.value = '';
+  } catch (err) {
+    console.error('Code import error:', err);
+  }
+}
+
+// Expand compact array to object for fillFormFromData
+function expandCompactToObj(arr) {
+  if (!Array.isArray(arr) || arr[0] !== 1) return arr;
+  const [, child, struct, type, days, vac, perm] = arr;
+  const STRUCT_R = { p:'petit_nemo', b:'baby_nemo', i:'indifferent' };
+  const TYPE_R   = { r:'regulier', o:'occasionnel' };
+  const DAY_K    = ['lundi','mardi','mercredi','jeudi','vendredi'];
+  const out = {
+    child: { lastName: child[0] || '', firstName: child[1] || '', date: child[2] || '', dateType: child[3] === 'b' ? 'birth' : child[3] === 'e' ? 'expected' : null },
+    structure: STRUCT_R[struct] || null,
+    typeAccueil: TYPE_R[type] || null,
+    days: DAY_K.map((d, i) => ({ day: d, selected: !!days[i], start: days[i] ? days[i][0] : null, end: days[i] ? days[i][1] : null })),
+    vacScolaires: !!vac,
+    permanence: { choice: null, keep: null, changeRanks: {} },
+  };
+  if (perm) {
+    out.permanence.choice = perm[0] === 'k' ? 'keep' : perm[0] === 'c' ? 'change' : null;
+    if (perm[0] === 'k') out.permanence.keep = perm[1];
+    if (perm[0] === 'c') out.permanence.changeRanks = perm[1] || {};
+  }
+  return out;
 }
 
 // Drop overlay

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(open:*)"
+      "Bash(open:*)",
+      "WebSearch",
+      "WebFetch(domain:cdnjs.com)",
+      "WebFetch(domain:unpkg.com)",
+      "WebFetch(domain:app.unpkg.com)"
     ]
   }
 }

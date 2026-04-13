@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fiche de Vœux – Petit Némo 2026-2027</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="fiche-voeux.css">
@@ -152,6 +154,28 @@
     <span data-i18n="footer1">Toute modification de ces vœux doit faire l'objet d'une validation par la Direction.</span><br>
     <span data-i18n="footer2">Nous donnerons suite à votre demande au plus tard le <strong>Lundi 30 Mars 2026</strong>.</span><br>
     <span data-i18n="footer3">Les demandes périscolaires du mercredi seront étudiées après la finalisation des inscriptions des nouvelles familles, au plus tard début juin.</span>
+  </div>
+
+  <!-- ── QR Preview ── -->
+  <div class="card" id="qrCard">
+    <div class="card-header">
+      <span class="icon">📱</span>
+      <h3>QR Code</h3>
+    </div>
+    <div class="card-body" style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+      <canvas id="qrPreview" width="120" height="120" style="border:1px solid var(--border);border-radius:6px;flex-shrink:0;"></canvas>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;">
+          QR code et code texte inclus dans le PDF.
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">CODE D'IMPORT</div>
+        <div id="importCode" style="font-family:monospace;font-size:11px;word-break:break-all;background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:8px;max-height:80px;overflow-y:auto;user-select:all;cursor:text;color:var(--text);"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input type="text" id="codeInput" placeholder="Coller un code N1... ici" style="flex:1;border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;font-family:monospace;outline:none;">
+          <button onclick="importFromCode()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;">Importer</button>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div><!-- /form-body -->
