@@ -113,15 +113,8 @@
             <span data-i18n="perm_keep_label">Je souhaite <strong>conserver</strong> mon jour de permanence</span>
           </div>
           <div class="perm-opt-body">
-            <div class="perm-keep-input">
-              <span data-i18n="perm_keep_current">Jour actuel :</span>
-              <select id="permKeepDay" class="keep-day-select">
-                <option value="" data-i18n-opt="opt_choose">— Choisir —</option>
-              </select>
-              <select id="permKeepPeriod" class="keep-day-select">
-                <option value="" data-i18n-opt="opt_choose">— Choisir —</option>
-              </select>
-            </div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;" data-i18n="perm_keep_hint">Sélectionner votre créneau actuel :</div>
+            <div class="perm-change-grid" id="permKeepGrid"><!-- JS --></div>
           </div>
         </div>
 
