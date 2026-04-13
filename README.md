@@ -11,7 +11,7 @@ Parents fill in their care preferences for the upcoming school year, then downlo
 | **Child info** | Last name, first name, date of birth, expected birth date |
 | **Facility preference** | Petit Nemo / Baby Nemo / No preference |
 | **Care type** | Regular (*regulier*) or Occasional (*occasionnel*) |
-| **Care days** | Monday-Friday checkboxes, each with a dual-handle time range slider (7h30-18h15, with enforced arrival before 9h00 and departure after 16h00) |
+| **Care days** | Monday-Friday checkboxes, each with a dual-handle time range slider (7h30-18h00, with enforced arrival before 9h00 and departure after 16h00) |
 | **School holidays only** | Optional checkbox |
 | **Duty shifts (permanences)** | Keep current day+period, or change with ranked preference grid (morning/afternoon x 5 days) |
 
@@ -22,25 +22,37 @@ Parents fill in their care preferences for the upcoming school year, then downlo
 - **Ranked permanence selection** -- click day/period buttons to assign preference order (1, 2, 3...), click again to remove and auto-reorder
 - **PDF generation** -- client-side via [jsPDF](https://github.com/parallax/jsPDF), produces an A4 document matching the layout of the original `PN - Fiche de Voeux 2026-2027.pdf`
 - **Responsive** -- adapts to mobile screens
-- **Zero backend** -- single self-contained HTML file, no build step, no server required
+- **Zero backend** -- no build step, no server required
+
+## Important: PDF parity
+
+The generated PDF must contain **all the same information visible on the HTML page** (headers, notes, footer text, group info, etc.) -- not just the filled-in fields. Some parents will print the PDF and fill it in by hand, so it needs to work as a standalone paper form.
+
+## PDF filename
+
+The downloaded PDF is named `Fiche_Voeux_PetitNemo_2026-2027_{LastName}_{YYYY-MM-DD}.pdf`, including the child's last name and the download date for easy identification.
+
+## Architecture
+
+Currently a static frontend with no backend. A **Cloudflare Worker (TypeScript)** backend could be added later (e.g. to collect submissions, send confirmation emails), but frontend-only is preferred to keep things simple.
 
 ## Usage
 
 Open `fiche-voeux.html` in any modern browser. Fill in the form and click **Telecharger le PDF pre-rempli** at the bottom.
 
-The generated PDF is named `Fiche_Voeux_PetitNemo_2026-2027_{LastName}_{FirstName}.pdf`.
-
 ## Tech stack
 
-- Single HTML file (~1300 lines) with embedded CSS and JavaScript
+- HTML + external CSS and JavaScript (no inline styles/scripts beyond layout)
 - [jsPDF 2.5.1](https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js) loaded from CDN
 - [Inter](https://fonts.google.com/specimen/Inter) font from Google Fonts
-- No frameworks, no dependencies beyond the two CDN resources above
+- No frameworks, no build tools, no dependencies beyond the two CDN resources above
 
 ## File structure
 
 ```
-fiche-voeux.html                    # The interactive form + PDF generator
+fiche-voeux.html                    # HTML structure (form markup)
+fiche-voeux.css                     # All styles
+fiche-voeux.js                      # i18n, UI logic, PDF generation
 PN - Fiche de Voeux 2026-2027.pdf   # Original reference PDF form
 ```
 
