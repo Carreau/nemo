@@ -175,6 +175,10 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
 
 const rows = [];
 
+// Restore persisted rows
+loadRows();
+renderTable();
+
 const COLUMNS = [
   { key: 'fileName',        label: 'Fichier' },
   { key: 'child.lastName',  label: 'Nom' },
@@ -236,6 +240,8 @@ function renderTable() {
   var thead = document.getElementById('thead');
   var tbody = document.getElementById('tbody');
   var countLabel = document.getElementById('countLabel');
+
+  saveRows();
 
   if (rows.length === 0) {
     toolbar.style.display = 'none';
@@ -368,8 +374,23 @@ function copyCSV() {
   navigator.clipboard.writeText(toDelimited(',')).then(function() { showToast('Copie (CSV) dans le presse-papier'); });
 }
 
+function saveRows() {
+  try { localStorage.setItem('nemo_admin_rows', JSON.stringify(rows)); } catch (e) {}
+}
+
+function loadRows() {
+  try {
+    var saved = localStorage.getItem('nemo_admin_rows');
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) { parsed.forEach(function(r) { rows.push(r); }); }
+    }
+  } catch (e) {}
+}
+
 function clearAll() {
   rows.length = 0;
+  saveRows();
   renderTable();
 }
 
