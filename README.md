@@ -71,9 +71,10 @@ Used for QR codes and text import codes. Prefix `N1` + base64-encoded binary.
 
 | Byte(s) | Content |
 |---|---|
-| 0 | Flags: bits 0-1 structure (0=none,1=p,2=b,3=i), 2-3 type (0=none,1=r,2=o), 4 vac, 5-6 perm (0=none,1=keep,2=change), 7 dateType (0=birth,1=expected) |
+| 0 | Flags: bits 0-1 structure (0=none,1=p,2=b,3=i), 2 type (0=regulier,1=occasionnel), 3 vac, 4 hasPerm, 5 permVal (0=keep,1=change), 6 dateType (0=birth,1=expected), 7 reserved |
 | 1 | Day bits: bit0=lundi .. bit4=vendredi |
-| 2..n | 3 length-prefixed UTF-8 strings: lastName, firstName, date |
+| 2-3 | Date as uint16 big-endian (days since 2020-01-01; 0xFFFF = no date) |
+| 4..n | 2 length-prefixed UTF-8 strings: lastName, firstName |
 | then | Per selected day: 2 bytes (start offset/15, end offset/15) from 450min base |
 | then | Perm data: keep=1 byte slot index; change=count + (slotIndex,rank) pairs |
 

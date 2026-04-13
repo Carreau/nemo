@@ -19,7 +19,8 @@
       "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fAZ9hiA.woff2\" -o inter-500.woff2)",
       "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYAZ9hiA.woff2\" -o inter-600.woff2)",
       "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYAZ9hiA.woff2\" -o inter-700.woff2)",
-      "Bash(curl -sL \"https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js\" -o /home/ubuntu/dev/nemo/vendor/qr-scanner-worker.min.js)"
+      "Bash(curl -sL \"https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js\" -o /home/ubuntu/dev/nemo/vendor/qr-scanner-worker.min.js)",
+      "Bash(node:*)"
     ]
   }
 }
