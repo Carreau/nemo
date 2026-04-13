@@ -116,8 +116,9 @@ A Cloudflare Worker (TypeScript) backend could be added later for submission col
 config.json                   Year-specific dates (single source of truth)
 fiche-voeux.html              Parent form (markup)
 fiche-voeux.css               Styles (includes self-hosted @font-face)
-fiche-voeux.js                i18n, UI logic, PDF generation, QR, binary codec
-admin.html                    Admin dashboard (self-contained)
+fiche-voeux.js                i18n, UI logic, PDF generation, QR live preview
+nemo-codec.js                 Shared binary QR codec (encode/decode/expand)
+admin.html                    Admin dashboard (uses shared codec)
 vendor/
   jspdf.umd.min.js            jsPDF 2.5.1 -- PDF generation
   pdf.min.js                  pdf.js 3.11.174 -- PDF metadata reading

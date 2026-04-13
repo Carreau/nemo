@@ -178,10 +178,6 @@ const END_MIN        = 960;  // 16h00 — departure must be after 4pm
 const DEFAULT_START  = 510;  // 8h30
 const DEFAULT_END    = 1020; // 17h00
 
-function minsToTime(m) {
-  return `${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}`;
-}
-
 function sliderPct(v) {
   return (v - RANGE_MIN) / (RANGE_MAX - RANGE_MIN) * 100;
 }
@@ -285,7 +281,7 @@ function rebuildDays() {
 function toggleDay(d) {
   const on = document.getElementById(`day_${d}`).checked;
   document.getElementById(`row_${d}`).classList.toggle('active', on);
-  if (typeof scheduleQR === 'function') scheduleQR();
+  scheduleQR();
 }
 
 /* ──────────────────────────────────────────────
@@ -327,7 +323,7 @@ function rebuildPermKeepGrid() {
 function togglePermKeep(id) {
   permKeepSelected = (permKeepSelected === id) ? null : id;
   rebuildPermKeepGrid();
-  if (typeof scheduleQR === 'function') scheduleQR();
+  scheduleQR();
 }
 
 /* ──────────────────────────────────────────────
@@ -383,7 +379,7 @@ function togglePermRank(id) {
     permRanks[id] = maxRank + 1;
   }
   rebuildPermGrid();
-  if (typeof scheduleQR === 'function') scheduleQR();
+  scheduleQR();
 }
 
 /* ──────────────────────────────────────────────
@@ -439,7 +435,7 @@ function selectPerm(v) {
   document.getElementById('permChange').checked = v === 'change';
   document.getElementById('permKeepOpt').classList.toggle('selected',   v === 'keep');
   document.getElementById('permChangeOpt').classList.toggle('selected', v === 'change');
-  if (typeof scheduleQR === 'function') scheduleQR();
+  scheduleQR();
 }
 
 /* ──────────────────────────────────────────────
@@ -508,143 +504,6 @@ function buildCompactData() {
     TYPE_MAP[typeVal] || null,
     days,
     chk('vacScolaires') ? 1 : 0,
-    permData,
-  ];
-}
-
-/* ──────────────────────────────────────────────
-   Binary QR encoding — minimizes QR density
-   Format: "N1" + base64(bitflags + varint-prefixed strings + packed slots)
-
-   Byte layout:
-     [0]    flags: bits 0-1=struct(0=none,1=p,2=b,3=i), 2-3=type(0=none,1=r,2=o),
-            4=vac, 5-6=perm(0=none,1=keep,2=change), 7=dateType(0=birth,1=expected)
-     [1]    dayBits: bit0=lundi..bit4=vendredi selected
-     [2..n] varint-len prefixed UTF-8 strings: lastName, firstName, date
-     then for each selected day: 2 bytes (start mins/15, end mins/15) — offset from 450
-     then perm data: if keep: 1 byte slotIndex; if change: N bytes (count + slotIndex,rank pairs)
-────────────────────────────────────────────── */
-const SLOT_ORDER = [];
-['matin','AM'].forEach(p => { ['lundi','mardi','mercredi','jeudi','vendredi'].forEach(d => { SLOT_ORDER.push(d + '_' + p); }); });
-
-function encodeQRBinary(compact) {
-  const [, child, struct, type, days, vac, perm] = compact;
-  const buf = [];
-
-  // Flags byte
-  const structMap = { p:1, b:2, i:3 };
-  const typeMap   = { r:1, o:2 };
-  let flags = (structMap[struct] || 0);
-  flags |= (typeMap[type] || 0) << 2;
-  flags |= (vac ? 1 : 0) << 4;
-  const permChoice = perm ? (perm[0] === 'k' ? 1 : perm[0] === 'c' ? 2 : 0) : 0;
-  flags |= permChoice << 5;
-  flags |= (child[3] === 'e' ? 1 : 0) << 7;
-  buf.push(flags);
-
-  // Day bits
-  let dayBits = 0;
-  for (let i = 0; i < 5; i++) { if (days[i]) dayBits |= (1 << i); }
-  buf.push(dayBits);
-
-  // Varint-prefixed strings
-  const enc = new TextEncoder();
-  [child[0] || '', child[1] || '', child[2] || ''].forEach(s => {
-    const bytes = enc.encode(s);
-    buf.push(bytes.length);
-    for (let i = 0; i < bytes.length; i++) buf.push(bytes[i]);
-  });
-
-  // Day times: each selected day = 2 bytes (start-offset/15, end-offset/15)
-  for (let i = 0; i < 5; i++) {
-    if (days[i]) {
-      const s = timeToMins(days[i][0]) || 450;
-      const e = timeToMins(days[i][1]) || 1080;
-      buf.push(Math.round((s - 450) / 15));
-      buf.push(Math.round((e - 450) / 15));
-    }
-  }
-
-  // Permanence
-  if (permChoice === 1 && perm[1]) {
-    buf.push(SLOT_ORDER.indexOf(perm[1]));
-  } else if (permChoice === 2 && perm[1]) {
-    const entries = Object.entries(perm[1]).sort((a,b) => a[1] - b[1]);
-    buf.push(entries.length);
-    entries.forEach(([slot, rank]) => {
-      buf.push(SLOT_ORDER.indexOf(slot));
-      buf.push(rank);
-    });
-  }
-
-  // Encode as "N1" prefix + base64
-  const u8 = new Uint8Array(buf);
-  let b64 = '';
-  for (let i = 0; i < u8.length; i++) b64 += String.fromCharCode(u8[i]);
-  return 'N1' + btoa(b64);
-}
-
-function decodeQRBinary(str) {
-  if (!str.startsWith('N1')) return null;
-  const raw = atob(str.slice(2));
-  const buf = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
-  let pos = 0;
-
-  const flags = buf[pos++];
-  const structIdx = flags & 3;
-  const typeIdx   = (flags >> 2) & 3;
-  const vac       = (flags >> 4) & 1;
-  const permChoice = (flags >> 5) & 3;
-  const dateIsExpected = (flags >> 7) & 1;
-
-  const dayBits = buf[pos++];
-
-  // Read strings
-  const dec = new TextDecoder();
-  const strings = [];
-  for (let s = 0; s < 3; s++) {
-    const len = buf[pos++];
-    strings.push(dec.decode(buf.slice(pos, pos + len)));
-    pos += len;
-  }
-
-  // Days
-  const structRev = [null, 'p', 'b', 'i'];
-  const typeRev   = [null, 'r', 'o'];
-  const days = [];
-  for (let i = 0; i < 5; i++) {
-    if (dayBits & (1 << i)) {
-      const s = buf[pos++] * 15 + 450;
-      const e = buf[pos++] * 15 + 450;
-      days.push([minsToTime(s), minsToTime(e)]);
-    } else {
-      days.push(null);
-    }
-  }
-
-  // Permanence
-  let permData = null;
-  if (permChoice === 1) {
-    permData = ['k', SLOT_ORDER[buf[pos++]]];
-  } else if (permChoice === 2) {
-    const count = buf[pos++];
-    const ranks = {};
-    for (let i = 0; i < count; i++) {
-      const slot = SLOT_ORDER[buf[pos++]];
-      const rank = buf[pos++];
-      ranks[slot] = rank;
-    }
-    permData = ['c', ranks];
-  }
-
-  return [
-    1,
-    [strings[0], strings[1], strings[2] || null, dateIsExpected ? 'e' : strings[2] ? 'b' : null],
-    structRev[structIdx],
-    typeRev[typeIdx],
-    days,
-    vac,
     permData,
   ];
 }
@@ -983,24 +842,8 @@ function generatePDF() {
 
   // ── Embed form data in PDF ──
   const compactData = buildCompactData();
-
-  // Expanded JSON for PDF metadata (human-readable)
-  const DAY_NAMES = ['lundi','mardi','mercredi','jeudi','vendredi'];
-  const STRUCT_FULL = { p:'petit_nemo', b:'baby_nemo', i:'indifferent' };
-  const TYPE_FULL   = { r:'regulier', o:'occasionnel' };
-  const cd = compactData;
-  const expandedData = {
-    child: { lastName: cd[1][0], firstName: cd[1][1], date: cd[1][2], dateType: cd[1][3] === 'b' ? 'birth' : cd[1][3] === 'e' ? 'expected' : null },
-    structure: STRUCT_FULL[cd[2]] || null,
-    typeAccueil: TYPE_FULL[cd[3]] || null,
-    days: DAY_NAMES.map((d, i) => ({ day: d, selected: !!cd[4][i], start: cd[4][i] ? cd[4][i][0] : null, end: cd[4][i] ? cd[4][i][1] : null })),
-    vacScolaires: !!cd[5],
-    permanence: {
-      choice: cd[6] ? (cd[6][0] === 'k' ? 'keep' : 'change') : null,
-      keep: cd[6] && cd[6][0] === 'k' ? cd[6][1] : null,
-      changeRanks: cd[6] && cd[6][0] === 'c' ? cd[6][1] : {},
-    },
-  };
+  const expandedData = expandCompactToObj(compactData);
+  const qrCodeStr = encodeQRBinary(compactData);
 
   doc.setProperties({
     title: `Fiche de V\u0153ux \u2013 Petit N\u00e9mo ${CFG.year}`,
@@ -1010,7 +853,7 @@ function generatePDF() {
 
   // ── QR code (compact binary) on lower right ──
   if (typeof QRious !== 'undefined') {
-    const qrPdf = new QRious({ size: 256, level: 'L', value: encodeQRBinary(compactData) });
+    const qrPdf = new QRious({ size: 256, level: 'L', value: qrCodeStr });
     const qrImg = qrPdf.toDataURL('image/png');
     const qrSize = 25;
     const qrX = PW - ML - qrSize;
@@ -1018,11 +861,10 @@ function generatePDF() {
     doc.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize);
 
     // Import code text next to QR
-    const codeStr = encodeQRBinary(compactData);
     tc(...C.muted); font('normal', 5);
     doc.text('Code d\'import :', ML, qrY);
     font('normal', 5.5); tc(...C.black);
-    const codeLines = doc.splitTextToSize(codeStr, qrX - ML - 4);
+    const codeLines = doc.splitTextToSize(qrCodeStr, qrX - ML - 4);
     doc.text(codeLines, ML, qrY + 4);
   }
 
@@ -1072,12 +914,6 @@ function clearForm() {
 /* ──────────────────────────────────────────────
    Drag & drop PDF import
 ────────────────────────────────────────────── */
-function timeToMins(s) {
-  if (!s) return null;
-  const m = s.match(/^(\d+)h(\d{2})$/);
-  return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : null;
-}
-
 function fillFormFromData(data) {
 
   // Child info
@@ -1156,29 +992,6 @@ function importFromCode() {
   } catch (err) {
     console.error('Code import error:', err);
   }
-}
-
-// Expand compact array to object for fillFormFromData
-function expandCompactToObj(arr) {
-  if (!Array.isArray(arr) || arr[0] !== 1) return arr;
-  const [, child, struct, type, days, vac, perm] = arr;
-  const STRUCT_R = { p:'petit_nemo', b:'baby_nemo', i:'indifferent' };
-  const TYPE_R   = { r:'regulier', o:'occasionnel' };
-  const DAY_K    = ['lundi','mardi','mercredi','jeudi','vendredi'];
-  const out = {
-    child: { lastName: child[0] || '', firstName: child[1] || '', date: child[2] || '', dateType: child[3] === 'b' ? 'birth' : child[3] === 'e' ? 'expected' : null },
-    structure: STRUCT_R[struct] || null,
-    typeAccueil: TYPE_R[type] || null,
-    days: DAY_K.map((d, i) => ({ day: d, selected: !!days[i], start: days[i] ? days[i][0] : null, end: days[i] ? days[i][1] : null })),
-    vacScolaires: !!vac,
-    permanence: { choice: null, keep: null, changeRanks: {} },
-  };
-  if (perm) {
-    out.permanence.choice = perm[0] === 'k' ? 'keep' : perm[0] === 'c' ? 'change' : null;
-    if (perm[0] === 'k') out.permanence.keep = perm[1];
-    if (perm[0] === 'c') out.permanence.changeRanks = perm[1] || {};
-  }
-  return out;
 }
 
 // Drop overlay

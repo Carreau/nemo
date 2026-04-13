@@ -7,6 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
 <script src="vendor/pdf.min.js"></script>
 <script src="vendor/qr-scanner.umd.min.js"></script>
+<script src="nemo-codec.js"></script>
 <style>
 @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('vendor/fonts/inter-400.woff2') format('woff2'); }
 @font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap; src: url('vendor/fonts/inter-500.woff2') format('woff2'); }
@@ -307,7 +308,6 @@ async function processFile(file) {
     }
     var data = JSON.parse(subject);
     rows.push(flattenData(data, file.name, encodeFromExpanded(data)));
-    renderTable();
   } catch (err) {
     console.error('Error processing', file.name, err);
     showToast(file.name + ' : erreur de lecture');
@@ -318,6 +318,7 @@ async function processFiles(files) {
   var pdfs = Array.from(files).filter(function(f) { return f.type === 'application/pdf' || f.name.endsWith('.pdf'); });
   if (pdfs.length === 0) return;
   await Promise.all(pdfs.map(processFile));
+  renderTable();
   showToast(pdfs.length + ' PDF traité' + (pdfs.length > 1 ? 's' : ''));
 }
 
@@ -392,125 +393,12 @@ function clearAll() {
   renderTable();
 }
 
-// Binary code decoder (matches fiche-voeux.js encodeQRBinary)
-var SLOT_ORDER = [];
-['matin','AM'].forEach(function(p) { ['lundi','mardi','mercredi','jeudi','vendredi'].forEach(function(d) { SLOT_ORDER.push(d + '_' + p); }); });
+// Codec functions (SLOT_ORDER, decodeQRBinary, encodeQRBinary, expandCompactToObj,
+// encodeFromExpanded, minsToTime, timeToMins) are loaded from nemo-codec.js
 
-function minsToTime(m) {
-  return Math.floor(m/60) + 'h' + String(m%60).padStart(2,'0');
-}
-
-function decodeQRBinary(str) {
-  if (!str || !str.startsWith('N1')) return null;
-  var raw = atob(str.slice(2));
-  var buf = new Uint8Array(raw.length);
-  for (var i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
-  var pos = 0;
-
-  var flags = buf[pos++];
-  var structIdx = flags & 3;
-  var typeIdx   = (flags >> 2) & 3;
-  var vac       = (flags >> 4) & 1;
-  var permChoice = (flags >> 5) & 3;
-  var dateIsExpected = (flags >> 7) & 1;
-  var dayBits = buf[pos++];
-
-  var dec = new TextDecoder();
-  var strings = [];
-  for (var s = 0; s < 3; s++) {
-    var len = buf[pos++];
-    strings.push(dec.decode(buf.slice(pos, pos + len)));
-    pos += len;
-  }
-
-  var structNames = [null, 'petit_nemo', 'baby_nemo', 'indifferent'];
-  var typeNames   = [null, 'regulier', 'occasionnel'];
-  var dayNames    = ['lundi','mardi','mercredi','jeudi','vendredi'];
-  var days = [];
-  for (var di = 0; di < 5; di++) {
-    if (dayBits & (1 << di)) {
-      var sv = buf[pos++] * 15 + 450;
-      var ev = buf[pos++] * 15 + 450;
-      days.push({ day: dayNames[di], selected: true, start: minsToTime(sv), end: minsToTime(ev) });
-    } else {
-      days.push({ day: dayNames[di], selected: false, start: null, end: null });
-    }
-  }
-
-  var permData = { choice: null, keep: null, changeRanks: {} };
-  if (permChoice === 1) {
-    permData.choice = 'keep';
-    permData.keep = SLOT_ORDER[buf[pos++]];
-  } else if (permChoice === 2) {
-    permData.choice = 'change';
-    var count = buf[pos++];
-    for (var ri = 0; ri < count; ri++) {
-      var slot = SLOT_ORDER[buf[pos++]];
-      var rank = buf[pos++];
-      permData.changeRanks[slot] = rank;
-    }
-  }
-
-  return {
-    child: { lastName: strings[0], firstName: strings[1], date: strings[2] || '', dateType: dateIsExpected ? 'expected' : strings[2] ? 'birth' : null },
-    structure: structNames[structIdx],
-    typeAccueil: typeNames[typeIdx],
-    days: days,
-    vacScolaires: !!vac,
-    permanence: permData,
-  };
-}
-
-// Encode expanded data to N1 code (for edit links)
-function timeToMinsInt(s) {
-  if (!s) return 450;
-  var m = s.match(/^(\d+)h(\d{2})$/);
-  return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : 450;
-}
-
-function encodeFromExpanded(data) {
-  var buf = [];
-  var structMap = { petit_nemo:1, baby_nemo:2, indifferent:3 };
-  var typeMap = { regulier:1, occasionnel:2 };
-  var flags = (structMap[data.structure] || 0);
-  flags |= (typeMap[data.typeAccueil] || 0) << 2;
-  flags |= (data.vacScolaires ? 1 : 0) << 4;
-  var pc = data.permanence?.choice;
-  var permChoice = pc === 'keep' ? 1 : pc === 'change' ? 2 : 0;
-  flags |= permChoice << 5;
-  flags |= (data.child?.dateType === 'expected' ? 1 : 0) << 7;
-  buf.push(flags);
-
-  var dayBits = 0;
-  (data.days || []).forEach(function(d, i) { if (d.selected) dayBits |= (1 << i); });
-  buf.push(dayBits);
-
-  var enc = new TextEncoder();
-  [data.child?.lastName || '', data.child?.firstName || '', data.child?.date || ''].forEach(function(s) {
-    var bytes = enc.encode(s);
-    buf.push(bytes.length);
-    for (var i = 0; i < bytes.length; i++) buf.push(bytes[i]);
-  });
-
-  (data.days || []).forEach(function(d) {
-    if (d.selected) {
-      buf.push(Math.round((timeToMinsInt(d.start) - 450) / 15));
-      buf.push(Math.round((timeToMinsInt(d.end) - 450) / 15));
-    }
-  });
-
-  if (permChoice === 1 && data.permanence.keep) {
-    buf.push(SLOT_ORDER.indexOf(data.permanence.keep));
-  } else if (permChoice === 2 && data.permanence.changeRanks) {
-    var entries = Object.entries(data.permanence.changeRanks).sort(function(a,b) { return a[1] - b[1]; });
-    buf.push(entries.length);
-    entries.forEach(function(e) { buf.push(SLOT_ORDER.indexOf(e[0])); buf.push(e[1]); });
-  }
-
-  var u8 = new Uint8Array(buf);
-  var b64 = '';
-  for (var i = 0; i < u8.length; i++) b64 += String.fromCharCode(u8[i]);
-  return 'N1' + btoa(b64);
+function decodeToExpanded(code) {
+  var compact = decodeQRBinary(code);
+  return compact ? expandCompactToObj(compact) : null;
 }
 
 function importCode() {
@@ -518,7 +406,7 @@ function importCode() {
   var code = input.value.trim();
   if (!code) return;
   try {
-    var data = decodeQRBinary(code);
+    var data = decodeToExpanded(code);
     if (!data) { showToast('Code invalide'); return; }
     rows.push(flattenData(data, 'code-import', code));
     renderTable();
@@ -547,7 +435,7 @@ function openScanner() {
       if (!code || !code.startsWith('N1')) return;
       closeScanner();
       try {
-        var data = decodeQRBinary(code);
+        var data = decodeToExpanded(code);
         if (!data) { showToast('QR invalide'); return; }
         rows.push(flattenData(data, 'qr-scan', code));
         renderTable();
