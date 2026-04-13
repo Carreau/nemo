@@ -573,6 +573,10 @@ body {
         <strong data-i18n="note_reg">Contrat régulier :</strong> <span data-i18n="note_reg_val">une permanence de 3h30 tous les 15 jours.</span><br>
         <strong data-i18n="note_occ">Présences occasionnelles :</strong> <span data-i18n="note_occ_val">une permanence de 3h30 toutes les 10 présences.</span>
       </div>
+      <div class="note note-groups" style="margin-top:10px; background:#f0f9ff; border-color:#7dd3fc; color:#0c4a6e;">
+        <strong data-i18n="note_groups_title">Créneaux habituels par groupe :</strong><br>
+        <span data-i18n="note_groups_body">🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (petits) — permanences habituellement l'<strong>après-midi</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (grands) — permanences habituellement le <strong>matin</strong></span>
+      </div>
     </div>
   </div>
 
@@ -634,6 +638,8 @@ const T = {
     note_reg_val:       'une permanence de 3h30 tous les 15 jours.',
     note_occ:           'Présences occasionnelles :',
     note_occ_val:       'une permanence de 3h30 toutes les 10 présences.',
+    note_groups_title:  'Créneaux habituels par groupe :',
+    note_groups_body:   '🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (petits) — permanences habituellement l\'<strong>après-midi</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (grands) — permanences habituellement le <strong>matin</strong>',
     footer1:            "Toute modification de ces vœux doit faire l'objet d'une validation par la Direction.",
     footer2:            'Nous donnerons suite à votre demande au plus tard le <strong>Lundi 30 Mars 2026</strong>.',
     footer3:            'Les demandes périscolaires du mercredi seront étudiées après la finalisation des inscriptions des nouvelles familles, au plus tard début juin.',
@@ -675,6 +681,8 @@ const T = {
     note_reg_val:       'a 3h30 duty shift every 15 days.',
     note_occ:           'Occasional attendance:',
     note_occ_val:       'a 3h30 duty shift every 10 attendances.',
+    note_groups_title:  'Usual slots by group:',
+    note_groups_body:   '🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (younger) — duty usually in the <strong>afternoon</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (older) — duty usually in the <strong>morning</strong>',
     footer1:            'Any changes to these preferences must be approved by the Director.',
     footer2:            'We will respond to your request by <strong>Monday March 30, 2026</strong> at the latest.',
     footer3:            'Wednesday after-school requests will be reviewed after finalising new family registrations, by early June at the latest.',
@@ -881,6 +889,10 @@ rebuildDays();
 rebuildPermGrid();
 rebuildPermKeepDropdowns();
 
+// Sync permanence visual state (handles browser-restored form values)
+const checkedPerm = document.querySelector('input[name="permanence"]:checked');
+if (checkedPerm) selectPerm(checkedPerm.value);
+
 /* ──────────────────────────────────────────────
    Helpers
 ────────────────────────────────────────────── */
@@ -924,7 +936,7 @@ function generatePDF() {
 
   // Filled rounded-ish rect (jsPDF doesn't have native rounded rects so we use regular)
   function filledRect(x,y,w,h, ...rgb) { fc(...rgb); dc(...rgb); doc.rect(x,y,w,h,'F'); }
-  function strokedRect(x,y,w,h, ...rgb) { dc(...rgb); lw(0.3); doc.rect(x,y,w,h,'S'); }
+  function strokedRect(x,y,w,h, ...rgb) { dc(...(rgb.length ? rgb : C.border)); lw(0.3); doc.rect(x,y,w,h,'S'); }
 
   function checkbox(x, y, isChecked) {
     lw(0.4); dc(...C.muted);
@@ -1042,8 +1054,9 @@ function generatePDF() {
   y = sectionHeader("Jours d'accueil souhaités (7h30 – 18h15)", y);
   y += 4;
 
-  DAYS.forEach(day => {
+  T.fr.days.forEach((day, di) => {
     const d = day.toLowerCase();
+    const dispDay = T[lang].days[di] || day;
     const on = chk(`day_${d}`);
     const fh = val(`${d}_from_h`), fm = val(`${d}_from_m`);
     const th = val(`${d}_to_h`),   tm = val(`${d}_to_m`);
@@ -1059,7 +1072,7 @@ function generatePDF() {
     // Day name
     font(on ? 'bold' : 'normal', 10);
     const dayColor = on ? C.blue : C.black; tc(...dayColor);
-    doc.text(day, ML + 9, y);
+    doc.text(dispDay, ML + 9, y);
 
     // Time
     font('normal', 10); tc(...C.muted);
