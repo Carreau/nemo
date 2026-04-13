@@ -6,6 +6,7 @@
 <title>Admin – Fiches de Voeux</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -132,6 +133,19 @@ td.empty { color: var(--muted); font-style: italic; }
     <input type="text" id="codeInput" placeholder="Coller un code N1... ici" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:8px 11px;font-size:13px;font-family:monospace;margin-top:4px;outline:none;">
   </div>
   <button class="btn" onclick="importCode()" style="margin-bottom:0;">Importer</button>
+  <button class="btn" onclick="openScanner()" style="margin-bottom:0;">📷 Scanner QR</button>
+</div>
+
+<!-- QR Scanner modal -->
+<div id="scannerModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);align-items:center;justify-content:center;">
+  <div style="background:var(--white);border-radius:12px;padding:20px;max-width:400px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.2);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="font-weight:600;color:var(--blue);">Scanner un QR code</span>
+      <button onclick="closeScanner()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;">&times;</button>
+    </div>
+    <video id="scannerVideo" style="width:100%;border-radius:8px;background:#000;"></video>
+    <div id="scannerStatus" style="font-size:12px;color:var(--muted);margin-top:8px;text-align:center;">Positionnez le QR code devant la camera...</div>
+  </div>
 </div>
 
 <div class="toolbar" id="toolbar" style="display:none;">
@@ -422,6 +436,46 @@ function importCode() {
     console.error('Code import error:', err);
     showToast('Erreur de decodage');
   }
+}
+
+// QR Scanner
+var qrScanner = null;
+
+function openScanner() {
+  var modal = document.getElementById('scannerModal');
+  modal.style.display = 'flex';
+  var video = document.getElementById('scannerVideo');
+  var status = document.getElementById('scannerStatus');
+  status.textContent = 'Positionnez le QR code devant la camera...';
+
+  qrScanner = new QrScanner(
+    video,
+    function(result) {
+      var code = result.data;
+      if (!code || !code.startsWith('N1')) return;
+      closeScanner();
+      try {
+        var data = decodeQRBinary(code);
+        if (!data) { showToast('QR invalide'); return; }
+        rows.push(flattenData(data, 'qr-scan'));
+        renderTable();
+        showToast('QR code importe');
+      } catch (err) {
+        console.error('QR scan decode error:', err);
+        showToast('Erreur de decodage');
+      }
+    },
+    { returnDetailedScanResult: true, highlightScanRegion: true }
+  );
+
+  qrScanner.start().catch(function(err) {
+    status.textContent = 'Erreur camera : ' + err.message;
+  });
+}
+
+function closeScanner() {
+  if (qrScanner) { qrScanner.stop(); qrScanner.destroy(); qrScanner = null; }
+  document.getElementById('scannerModal').style.display = 'none';
 }
 
 function showToast(msg) {
