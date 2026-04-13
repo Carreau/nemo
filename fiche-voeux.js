@@ -458,8 +458,16 @@ if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
 }
 
-// Load config and apply date-dependent strings
-loadConfig();
+// Load config and apply date-dependent strings, then check URL for import code
+loadConfig().then(() => {
+  const urlCode = new URLSearchParams(window.location.search).get('code');
+  if (urlCode && urlCode.startsWith('N1')) {
+    try {
+      const compact = decodeQRBinary(urlCode);
+      if (compact) fillFormFromData(expandCompactToObj(compact));
+    } catch (e) { console.error('URL code import failed:', e); }
+  }
+});
 
 /* ──────────────────────────────────────────────
    QR Code — live preview

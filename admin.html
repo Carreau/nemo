@@ -193,8 +193,8 @@ const COLUMNS = [
   { key: 'perm.detail',     label: 'Detail permanence' },
 ];
 
-function flattenData(data, fileName) {
-  const flat = { fileName: fileName };
+function flattenData(data, fileName, code) {
+  const flat = { fileName: fileName, _code: code || '' };
 
   flat['child.lastName']  = data.child?.lastName || '';
   flat['child.firstName'] = data.child?.firstName || '';
@@ -250,6 +250,10 @@ function renderTable() {
   // Build header safely
   thead.textContent = '';
   var headRow = document.createElement('tr');
+  var thEdit = document.createElement('th');
+  thEdit.textContent = '';
+  thEdit.style.width = '1%';
+  headRow.appendChild(thEdit);
   COLUMNS.forEach(function(c) {
     var th = document.createElement('th');
     th.textContent = c.label;
@@ -261,6 +265,17 @@ function renderTable() {
   tbody.textContent = '';
   rows.forEach(function(row) {
     var tr = document.createElement('tr');
+    // Edit link
+    var tdEdit = document.createElement('td');
+    if (row._code) {
+      var a = document.createElement('a');
+      a.href = 'fiche-voeux.html?code=' + encodeURIComponent(row._code);
+      a.textContent = '\u270e';
+      a.title = 'Ouvrir dans le formulaire';
+      a.style.cssText = 'text-decoration:none;font-size:15px;';
+      tdEdit.appendChild(a);
+    }
+    tr.appendChild(tdEdit);
     COLUMNS.forEach(function(c) {
       var td = document.createElement('td');
       var v = row[c.key] || '';
@@ -287,7 +302,7 @@ async function processFile(file) {
       return;
     }
     var data = JSON.parse(subject);
-    rows.push(flattenData(data, file.name));
+    rows.push(flattenData(data, file.name, encodeFromExpanded(data)));
     renderTable();
   } catch (err) {
     console.error('Error processing', file.name, err);
@@ -427,6 +442,58 @@ function decodeQRBinary(str) {
   };
 }
 
+// Encode expanded data to N1 code (for edit links)
+function timeToMinsInt(s) {
+  if (!s) return 450;
+  var m = s.match(/^(\d+)h(\d{2})$/);
+  return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : 450;
+}
+
+function encodeFromExpanded(data) {
+  var buf = [];
+  var structMap = { petit_nemo:1, baby_nemo:2, indifferent:3 };
+  var typeMap = { regulier:1, occasionnel:2 };
+  var flags = (structMap[data.structure] || 0);
+  flags |= (typeMap[data.typeAccueil] || 0) << 2;
+  flags |= (data.vacScolaires ? 1 : 0) << 4;
+  var pc = data.permanence?.choice;
+  var permChoice = pc === 'keep' ? 1 : pc === 'change' ? 2 : 0;
+  flags |= permChoice << 5;
+  flags |= (data.child?.dateType === 'expected' ? 1 : 0) << 7;
+  buf.push(flags);
+
+  var dayBits = 0;
+  (data.days || []).forEach(function(d, i) { if (d.selected) dayBits |= (1 << i); });
+  buf.push(dayBits);
+
+  var enc = new TextEncoder();
+  [data.child?.lastName || '', data.child?.firstName || '', data.child?.date || ''].forEach(function(s) {
+    var bytes = enc.encode(s);
+    buf.push(bytes.length);
+    for (var i = 0; i < bytes.length; i++) buf.push(bytes[i]);
+  });
+
+  (data.days || []).forEach(function(d) {
+    if (d.selected) {
+      buf.push(Math.round((timeToMinsInt(d.start) - 450) / 15));
+      buf.push(Math.round((timeToMinsInt(d.end) - 450) / 15));
+    }
+  });
+
+  if (permChoice === 1 && data.permanence.keep) {
+    buf.push(SLOT_ORDER.indexOf(data.permanence.keep));
+  } else if (permChoice === 2 && data.permanence.changeRanks) {
+    var entries = Object.entries(data.permanence.changeRanks).sort(function(a,b) { return a[1] - b[1]; });
+    buf.push(entries.length);
+    entries.forEach(function(e) { buf.push(SLOT_ORDER.indexOf(e[0])); buf.push(e[1]); });
+  }
+
+  var u8 = new Uint8Array(buf);
+  var b64 = '';
+  for (var i = 0; i < u8.length; i++) b64 += String.fromCharCode(u8[i]);
+  return 'N1' + btoa(b64);
+}
+
 function importCode() {
   var input = document.getElementById('codeInput');
   var code = input.value.trim();
@@ -434,7 +501,7 @@ function importCode() {
   try {
     var data = decodeQRBinary(code);
     if (!data) { showToast('Code invalide'); return; }
-    rows.push(flattenData(data, 'code-import'));
+    rows.push(flattenData(data, 'code-import', code));
     renderTable();
     input.value = '';
     showToast('Code importe');
@@ -463,7 +530,7 @@ function openScanner() {
       try {
         var data = decodeQRBinary(code);
         if (!data) { showToast('QR invalide'); return; }
-        rows.push(flattenData(data, 'qr-scan'));
+        rows.push(flattenData(data, 'qr-scan', code));
         renderTable();
         showToast('QR code importe');
       } catch (err) {
