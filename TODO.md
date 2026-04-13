@@ -1,0 +1,1 @@
+- [ ] Add a button to allow to download an empty PDF (with no info, no QRCode, no N1 code)
