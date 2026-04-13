@@ -159,8 +159,8 @@ body {
 
 .day-row {
   display: grid;
-  grid-template-columns: 40px 100px 1fr;
-  align-items: center;
+  grid-template-columns: 40px 90px 1fr;
+  align-items: stretch;
   gap: 0;
   border: 1.5px solid var(--border);
   border-radius: 8px;
@@ -176,50 +176,120 @@ body {
   padding: 10px 0;
   background: #f9fafb;
   border-right: 1px solid var(--border);
-  height: 100%;
 }
 .day-check input { accent-color: var(--blue); width: 16px; height: 16px; cursor: pointer; }
 
 .day-label {
+  display: flex;
+  align-items: center;
   padding: 10px 12px;
   font-weight: 600;
   font-size: 14px;
   background: #f9fafb;
   border-right: 1px solid var(--border);
   color: var(--muted);
-  transition: color .12s;
+  transition: color .12s, background .12s;
 }
 .day-row.active .day-label { color: var(--blue); background: var(--blue-lt); }
 
+/* ── Time range slider ── */
 .day-times {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 16px 8px;
 }
-.day-times .sep { font-size: 12px; color: var(--muted); font-weight: 500; }
 
-.time-group {
+.time-badges {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
 }
-.time-group select {
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 5px 4px;
+.time-badge {
   font-size: 13px;
-  font-family: inherit;
-  background: var(--white);
-  cursor: pointer;
-  outline: none;
-  color: var(--text);
-  transition: border-color .12s, opacity .15s;
+  font-weight: 700;
+  color: var(--muted);
+  transition: color .15s;
+  min-width: 36px;
 }
-.time-group select:focus { border-color: var(--blue); }
-.time-group select:disabled { opacity: .35; cursor: default; }
-.time-group .h-sep { font-size: 13px; font-weight: 600; color: var(--muted); }
+.day-row.active .time-badge { color: var(--blue); }
+.time-sep { font-size: 11px; color: var(--muted); }
+
+.range-wrap {
+  position: relative;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+.range-track {
+  position: absolute;
+  left: 0; right: 0;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.range-fill {
+  position: absolute;
+  height: 4px;
+  background: var(--blue-md);
+  border-radius: 2px;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+.day-row.active .range-fill { background: var(--blue); }
+
+.range-wrap input[type="range"] {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;
+  outline: none;
+  margin: 0;
+}
+.range-wrap input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 2.5px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+  cursor: pointer;
+  pointer-events: all;
+  transition: border-color .12s, transform .1s;
+}
+.range-wrap input[type="range"]::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 2.5px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+  cursor: pointer;
+  pointer-events: all;
+}
+.day-row.active .range-wrap input[type="range"]::-webkit-slider-thumb {
+  border-color: var(--blue);
+}
+.day-row.active .range-wrap input[type="range"]::-moz-range-thumb {
+  border-color: var(--blue);
+}
+.range-wrap input[type="range"]:disabled { pointer-events: none; opacity: .4; }
+.range-wrap input[type="range"]:disabled::-webkit-slider-thumb { cursor: default; }
+
+.range-limits {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  opacity: .7;
+  margin-top: 1px;
+}
 
 /* ── Vac checkbox ── */
 .vac-label {
@@ -718,78 +788,115 @@ function setLang(l) {
 }
 
 /* ──────────────────────────────────────────────
-   Constants
+   Time slider constants
+   Range: 7h30 (450 min) → 18h15 (1095 min), step 15 min
+   Forced: start ≤ 9h00 (540), end ≥ 16h00 (960)
 ────────────────────────────────────────────── */
-const HOURS = Array.from({length: 12}, (_, i) => 7 + i);
-const MINS  = ['00','15','30','45'];
+const RANGE_MIN      = 450;  // 7h30
+const RANGE_MAX      = 1095; // 18h15
+const START_MAX      = 540;  // 9h00  — arrival must be before 9am
+const END_MIN        = 960;  // 16h00 — departure must be after 4pm
+const DEFAULT_START  = 510;  // 8h30
+const DEFAULT_END    = 1020; // 17h00
 
-function buildSelect(id, options, disabled) {
-  return `<select id="${id}"${disabled ? ' disabled' : ''}>
-    <option value="">--</option>
-    ${options.map(o => `<option value="${o}">${o}</option>`).join('')}
-  </select>`;
+function minsToTime(m) {
+  return `${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}`;
+}
+
+function sliderPct(v) {
+  return (v - RANGE_MIN) / (RANGE_MAX - RANGE_MIN) * 100;
+}
+
+function updateSlider(d, changed) {
+  const startEl = document.getElementById(`${d}_start`);
+  const endEl   = document.getElementById(`${d}_end`);
+  let s = parseInt(startEl.value);
+  let e = parseInt(endEl.value);
+
+  // Enforce constraints
+  s = Math.min(s, START_MAX);
+  e = Math.max(e, END_MIN);
+  if (changed === 'start' && s > e) s = e;
+  if (changed === 'end'   && e < s) e = s;
+  startEl.value = s;
+  endEl.value   = e;
+
+  const fill = document.getElementById(`fill_${d}`);
+  fill.style.left  = sliderPct(s) + '%';
+  fill.style.width = (sliderPct(e) - sliderPct(s)) + '%';
+
+  document.getElementById(`${d}_start_lbl`).textContent = minsToTime(s);
+  document.getElementById(`${d}_end_lbl`).textContent   = minsToTime(e);
 }
 
 /* ──────────────────────────────────────────────
    Build days grid
 ────────────────────────────────────────────── */
-// Store selected state across rebuilds
 const dayState = {};
 
 function rebuildDays() {
   const t = T[lang];
   // Save current state
-  t.days.forEach((_, i) => {
-    const d = T.fr.days[i].toLowerCase();
+  T.fr.days.forEach(day => {
+    const d = day.toLowerCase();
+    const se = document.getElementById(`${d}_start`);
+    const ee = document.getElementById(`${d}_end`);
     dayState[d] = {
-      checked: document.getElementById(`day_${d}`) ? document.getElementById(`day_${d}`).checked : false,
-      fh: document.getElementById(`${d}_from_h`) ? document.getElementById(`${d}_from_h`).value : '',
-      fm: document.getElementById(`${d}_from_m`) ? document.getElementById(`${d}_from_m`).value : '',
-      th: document.getElementById(`${d}_to_h`)   ? document.getElementById(`${d}_to_h`).value   : '',
-      tm: document.getElementById(`${d}_to_m`)   ? document.getElementById(`${d}_to_m`).value   : '',
+      checked: document.getElementById(`day_${d}`)?.checked ?? false,
+      start:   se ? parseInt(se.value) : DEFAULT_START,
+      end:     ee ? parseInt(ee.value) : DEFAULT_END,
     };
   });
 
   const daysGrid = document.getElementById('daysGrid');
   daysGrid.innerHTML = '';
   t.days.forEach((dayLabel, i) => {
-    const d = T.fr.days[i].toLowerCase();
-    const st = dayState[d] || {};
+    const d   = T.fr.days[i].toLowerCase();
+    const st  = dayState[d] || { checked: false, start: DEFAULT_START, end: DEFAULT_END };
+    const on  = st.checked;
+    const sv  = st.start, ev = st.end;
+
     const row = document.createElement('div');
-    row.className = 'day-row' + (st.checked ? ' active' : '');
+    row.className = 'day-row' + (on ? ' active' : '');
     row.id = `row_${d}`;
     row.innerHTML = `
       <div class="day-check">
-        <input type="checkbox" id="day_${d}" ${st.checked ? 'checked' : ''} onchange="toggleDay('${d}')">
+        <input type="checkbox" id="day_${d}" ${on ? 'checked' : ''} onchange="toggleDay('${d}')">
       </div>
       <div class="day-label">${dayLabel}</div>
       <div class="day-times">
-        <span class="sep">${t.de}</span>
-        <span class="time-group">
-          ${buildSelect(`${d}_from_h`, HOURS, !st.checked)}
-          <span class="h-sep">h</span>
-          ${buildSelect(`${d}_from_m`, MINS, !st.checked)}
-        </span>
-        <span class="sep">${t.a}</span>
-        <span class="time-group">
-          ${buildSelect(`${d}_to_h`, HOURS, !st.checked)}
-          <span class="h-sep">h</span>
-          ${buildSelect(`${d}_to_m`, MINS, !st.checked)}
-        </span>
+        <div class="time-badges">
+          <span class="time-badge" id="${d}_start_lbl">${minsToTime(sv)}</span>
+          <span class="time-sep">→</span>
+          <span class="time-badge" id="${d}_end_lbl">${minsToTime(ev)}</span>
+        </div>
+        <div class="range-wrap">
+          <div class="range-track"></div>
+          <div class="range-fill" id="fill_${d}"
+               style="left:${sliderPct(sv)}%;width:${sliderPct(ev)-sliderPct(sv)}%"></div>
+          <input type="range" id="${d}_start"
+                 min="${RANGE_MIN}" max="${START_MAX}" step="15" value="${sv}"
+                 ${!on ? 'disabled' : ''}
+                 oninput="updateSlider('${d}','start')">
+          <input type="range" id="${d}_end"
+                 min="${END_MIN}" max="${RANGE_MAX}" step="15" value="${ev}"
+                 ${!on ? 'disabled' : ''}
+                 oninput="updateSlider('${d}','end')">
+        </div>
+        <div class="range-limits">
+          <span>${minsToTime(RANGE_MIN)}</span>
+          <span style="color:#f59e0b;font-weight:600;" title="Arrivée au plus tard à 9h">≤ 9h00 &nbsp;|&nbsp; ≥ 16h00</span>
+          <span>${minsToTime(RANGE_MAX)}</span>
+        </div>
       </div>`;
     daysGrid.appendChild(row);
-    // Restore values
-    if (st.fh) document.getElementById(`${d}_from_h`).value = st.fh;
-    if (st.fm) document.getElementById(`${d}_from_m`).value = st.fm;
-    if (st.th) document.getElementById(`${d}_to_h`).value   = st.th;
-    if (st.tm) document.getElementById(`${d}_to_m`).value   = st.tm;
   });
 }
 
 function toggleDay(d) {
   const on = document.getElementById(`day_${d}`).checked;
   document.getElementById(`row_${d}`).classList.toggle('active', on);
-  [`${d}_from_h`,`${d}_from_m`,`${d}_to_h`,`${d}_to_m`].forEach(id => {
+  [`${d}_start`, `${d}_end`].forEach(id => {
     document.getElementById(id).disabled = !on;
   });
 }
@@ -1057,9 +1164,9 @@ function generatePDF() {
   T.fr.days.forEach((day, di) => {
     const d = day.toLowerCase();
     const dispDay = T[lang].days[di] || day;
-    const on = chk(`day_${d}`);
-    const fh = val(`${d}_from_h`), fm = val(`${d}_from_m`);
-    const th = val(`${d}_to_h`),   tm = val(`${d}_to_m`);
+    const on    = chk(`day_${d}`);
+    const startM = parseInt(val(`${d}_start`) || DEFAULT_START);
+    const endM   = parseInt(val(`${d}_end`)   || DEFAULT_END);
 
     // Row background
     if (on) filledRect(ML, y - 4, CW, 8.5, ...C.blueLt);
@@ -1078,8 +1185,8 @@ function generatePDF() {
     font('normal', 10); tc(...C.muted);
     doc.text('de', ML + 42, y);
     tc(...C.black);
-    const fromS = (fh && on) ? `${fh}h${fm||'00'}` : '– –';
-    const toS   = (th && on) ? `${th}h${tm||'00'}` : '– –';
+    const fromS = on ? minsToTime(startM) : '– –';
+    const toS   = on ? minsToTime(endM)   : '– –';
     doc.text(fromS, ML + 50, y);
     tc(...C.muted);
     doc.text('à', ML + 68, y);
