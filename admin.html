@@ -316,7 +316,7 @@ async function processFiles(files) {
   var pdfs = Array.from(files).filter(function(f) { return f.type === 'application/pdf' || f.name.endsWith('.pdf'); });
   if (pdfs.length === 0) return;
   await Promise.all(pdfs.map(processFile));
-  showToast(pdfs.length + ' PDF traite' + (pdfs.length > 1 ? 's' : ''));
+  showToast(pdfs.length + ' PDF traité' + (pdfs.length > 1 ? 's' : ''));
 }
 
 // Drag & drop on zone
@@ -363,11 +363,11 @@ function toDelimited(delim) {
 }
 
 function copyTSV() {
-  navigator.clipboard.writeText(toDelimited('\t')).then(function() { showToast('Copie (TSV) dans le presse-papier'); });
+  navigator.clipboard.writeText(toDelimited('\t')).then(function() { showToast('Copié (TSV) dans le presse-papiers'); });
 }
 
 function copyCSV() {
-  navigator.clipboard.writeText(toDelimited(',')).then(function() { showToast('Copie (CSV) dans le presse-papier'); });
+  navigator.clipboard.writeText(toDelimited(',')).then(function() { showToast('Copié (CSV) dans le presse-papiers'); });
 }
 
 function saveRows() {
@@ -524,7 +524,7 @@ function importCode() {
     showToast('Code importé');
   } catch (err) {
     console.error('Code import error:', err);
-    showToast('Erreur de decodage');
+    showToast('Erreur de décodage');
   }
 }
 
@@ -549,10 +549,10 @@ function openScanner() {
         if (!data) { showToast('QR invalide'); return; }
         rows.push(flattenData(data, 'qr-scan', code));
         renderTable();
-        showToast('QR code importe');
+        showToast('QR code importé');
       } catch (err) {
         console.error('QR scan decode error:', err);
-        showToast('Erreur de decodage');
+        showToast('Erreur de décodage');
       }
     },
     { returnDetailedScanResult: true, highlightScanRegion: true }
