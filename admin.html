@@ -175,10 +175,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
 
 const rows = [];
 
-// Restore persisted rows
-loadRows();
-renderTable();
-
 const COLUMNS = [
   { key: 'fileName',        label: 'Fichier' },
   { key: 'child.lastName',  label: 'Nom' },
@@ -578,6 +574,10 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(function() { t.classList.remove('show'); }, 2000);
 }
+
+// Restore persisted rows on load
+loadRows();
+renderTable();
 </script>
 </body>
 </html>
