@@ -785,6 +785,39 @@ function generatePDF() {
 }
 
 /* ──────────────────────────────────────────────
+   Clear form
+────────────────────────────────────────────── */
+function clearForm() {
+  document.getElementById('childLastName').value = '';
+  document.getElementById('childFirstName').value = '';
+  document.getElementById('childDate').value = '';
+  updateChildDateLabel();
+
+  document.querySelectorAll('input[name="structure"], input[name="typeAccueil"]').forEach(r => {
+    r.checked = false;
+    r.closest('.radio-pill').classList.remove('selected');
+  });
+
+  T.fr.days.forEach(day => {
+    dayState[day.toLowerCase()] = { checked: false, start: DEFAULT_START, end: DEFAULT_END };
+  });
+  skipDayStateRead = true;
+  rebuildDays();
+
+  const vacEl = document.getElementById('vacScolaires');
+  vacEl.checked = false;
+  document.getElementById('vacLabel').classList.remove('selected');
+
+  document.querySelectorAll('input[name="permanence"]').forEach(r => r.checked = false);
+  document.getElementById('permKeepOpt').classList.remove('selected');
+  document.getElementById('permChangeOpt').classList.remove('selected');
+  permKeepSelected = null;
+  rebuildPermKeepGrid();
+  Object.keys(permRanks).forEach(k => delete permRanks[k]);
+  rebuildPermGrid();
+}
+
+/* ──────────────────────────────────────────────
    Drag & drop PDF import
 ────────────────────────────────────────────── */
 function timeToMins(s) {
