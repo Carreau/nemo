@@ -5,11 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fiche de Vœux – Petit Némo 2026-2027</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/qrious.min.js"></script>
 <link rel="stylesheet" href="fiche-voeux.css">
 </head>
 <body>
@@ -17,6 +15,7 @@
 <!-- ── Banner ── -->
 <div class="banner">
   <div class="lang-toggle">
+    <a href="admin.html" class="lang-btn" style="text-decoration:none;">Admin</a>
     <button class="lang-btn active" id="btnFR" onclick="setLang('fr')">FR</button>
     <button class="lang-btn"        id="btnEN" onclick="setLang('en')">EN</button>
   </div>

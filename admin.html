@@ -5,10 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin – Fiches de Voeux</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/qr-scanner.umd.min.js"></script>
 <style>
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('vendor/fonts/inter-400.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap; src: url('vendor/fonts/inter-500.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap; src: url('vendor/fonts/inter-600.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: swap; src: url('vendor/fonts/inter-700.woff2') format('woff2'); }
 :root {
   --blue: #1a5f7a;
   --blue-lt: #e8f4f8;
@@ -118,7 +121,10 @@ td.empty { color: var(--muted); font-style: italic; }
 </head>
 <body>
 
-<h1>Fiches de Voeux – Admin</h1>
+<div style="display:flex;justify-content:space-between;align-items:baseline;">
+  <h1>Fiches de Voeux – Admin</h1>
+  <a href="fiche-voeux.html" style="font-size:13px;color:var(--blue);text-decoration:none;font-weight:500;">&larr; Formulaire</a>
+</div>
 <p class="subtitle">Glisser des PDF generees par le formulaire pour extraire les donnees</p>
 
 <div class="drop-zone" id="dropZone">
@@ -165,7 +171,7 @@ td.empty { color: var(--muted); font-style: italic; }
 <div class="toast" id="toast"></div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
 
 const rows = [];
 

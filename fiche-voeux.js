@@ -1,12 +1,48 @@
 /* ──────────────────────────────────────────────
+   Config — loaded from config.json
+────────────────────────────────────────────── */
+let CFG = {};
+
+function fmtLong(isoDate, locale) {
+  const d = new Date(isoDate + 'T00:00:00');
+  return new Intl.DateTimeFormat(locale, { weekday:'long', year:'numeric', month:'long', day:'numeric' }).format(d);
+}
+
+function fmtShort(isoDate, locale) {
+  const d = new Date(isoDate + 'T00:00:00');
+  return new Intl.DateTimeFormat(locale, { year:'numeric', month:'long', day:'numeric' }).format(d);
+}
+
+async function loadConfig() {
+  try {
+    const resp = await fetch('config.json');
+    CFG = await resp.json();
+  } catch (e) {
+    console.warn('config.json not found, using defaults');
+    CFG = { year:'2026-2027', careStart:'2026-08-26', deadline:'2026-02-23', responseBy:'2026-03-30' };
+  }
+  // Apply config to i18n strings using Intl date formatting
+  T.fr.subtitle   = `Petit N\u00e9mo \u2014 Souhaits d\u2019accueil pour l\u2019ann\u00e9e ${CFG.year}`;
+  T.fr.since      = `Accueil \u00e0 partir du ${fmtLong(CFG.careStart, 'fr-FR')}`;
+  T.fr.deadline   = `\u00c0 nous retourner avant le <strong>${fmtLong(CFG.deadline, 'fr-FR')}</strong>`;
+  T.fr.footer2    = `Nous donnerons suite \u00e0 votre demande au plus tard le <strong>${fmtLong(CFG.responseBy, 'fr-FR')}</strong>.`;
+  T.en.subtitle   = `Petit N\u00e9mo \u2014 Care preferences for ${CFG.year}`;
+  T.en.since      = `Care starting ${fmtLong(CFG.careStart, 'en-US')}`;
+  T.en.deadline   = `To be returned before <strong>${fmtLong(CFG.deadline, 'en-US')}</strong>`;
+  T.en.footer2    = `We will respond to your request by <strong>${fmtLong(CFG.responseBy, 'en-US')}</strong> at the latest.`;
+  // Re-apply current language
+  setLang(lang);
+}
+
+/* ──────────────────────────────────────────────
    i18n
 ────────────────────────────────────────────── */
 const T = {
   fr: {
     title:              'Fiche de Vœux',
-    subtitle:           'Petit Némo \u2014 Souhaits d\u2019accueil pour l\u2019année 2026\u20132027',
-    since:              'Accueil à partir du 26 août 2026',
-    deadline:           'À nous retourner avant le <strong>23 Février 2026</strong>',
+    subtitle:           '',
+    since:              '',
+    deadline:           '',
     card_child:         "Informations sur l'enfant",
     card_structure:     "Structure d'accueil souhaitée",
     card_type:          "Type d'accueil souhaité",
@@ -45,16 +81,16 @@ const T = {
     note_groups_title:  'Créneaux habituels par groupe :',
     note_groups_body:   '🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (petits) — permanences habituellement l\'<strong>après-midi</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (grands) — permanences habituellement le <strong>matin</strong>',
     footer1:            "Toute modification de ces vœux doit faire l'objet d'une validation par la Direction.",
-    footer2:            'Nous donnerons suite à votre demande au plus tard le <strong>Lundi 30 Mars 2026</strong>.',
+    footer2:            '',
     footer3:            'Les demandes périscolaires du mercredi seront étudiées après la finalisation des inscriptions des nouvelles familles, au plus tard début juin.',
     dl_btn:             'Télécharger le PDF pré-rempli',
     drop_hint:          'Glisser un PDF pour pré-remplir le formulaire',
   },
   en: {
     title:              'Care Preference Form',
-    subtitle:           'Petit Némo \u2014 Care preferences for 2026\u20132027',
-    since:              'Care starting August 26, 2026',
-    deadline:           'To be returned before <strong>February 23, 2026</strong>',
+    subtitle:           '',
+    since:              '',
+    deadline:           '',
     card_child:         "Child information",
     card_structure:     "Preferred care facility",
     card_type:          "Preferred care type",
@@ -93,7 +129,7 @@ const T = {
     note_groups_title:  'Usual slots by group:',
     note_groups_body:   '🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (younger) — duty usually in the <strong>afternoon</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (older) — duty usually in the <strong>morning</strong>',
     footer1:            'Any changes to these preferences must be approved by the Director.',
-    footer2:            'We will respond to your request by <strong>Monday March 30, 2026</strong> at the latest.',
+    footer2:            '',
     footer3:            'Wednesday after-school requests will be reviewed after finalising new family registrations, by early June at the latest.',
     dl_btn:             'Download pre-filled PDF',
     drop_hint:          'Drop a PDF to pre-fill the form',
@@ -419,8 +455,11 @@ if (checkedPerm) selectPerm(checkedPerm.value);
 
 // pdf.js worker
 if (typeof pdfjsLib !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
 }
+
+// Load config and apply date-dependent strings
+loadConfig();
 
 /* ──────────────────────────────────────────────
    QR Code — live preview
@@ -694,10 +733,10 @@ function generatePDF() {
   doc.text('Fiche de V\u0153ux', PW/2, y, { align:'center' });
   y += 5;
   font('normal', 9); tc(...C.black);
-  doc.text("Petit N\u00e9mo \u00b7 Souhaits d'accueil pour l'ann\u00e9e 2026\u20132027", PW/2, y, { align:'center' });
+  doc.text(`Petit N\u00e9mo \u00b7 Souhaits d'accueil pour l'ann\u00e9e ${CFG.year}`, PW/2, y, { align:'center' });
   y += 3.5;
   font('normal', 7.5); tc(...C.muted);
-  doc.text('Accueil \u00e0 partir du 26 ao\u00fbt 2026', PW/2, y, { align:'center' });
+  doc.text(`Accueil \u00e0 partir du ${fmtLong(CFG.careStart, 'fr-FR')}`, PW/2, y, { align:'center' });
   y += 4;
 
   // ── Deadline bar ──
@@ -705,7 +744,7 @@ function generatePDF() {
   lw(0.5); dc(...C.red);
   doc.line(0, y, PW, y);
   tc(...C.red); font('bold', 8.5);
-  doc.text('\u00c0 nous retourner avant le 23 F\u00e9vrier 2026', PW/2, y + 5, { align:'center' });
+  doc.text(`\u00c0 nous retourner avant le ${fmtLong(CFG.deadline, 'fr-FR')}`, PW/2, y + 5, { align:'center' });
   y += 11;
 
   // ── Enfant ──
@@ -929,7 +968,7 @@ function generatePDF() {
   tc(...C.muted); font('normal', 7.5);
   const footer = [
     "Toute modification de ces v\u0153ux doit faire l'objet d'une validation par la Direction.",
-    "Nous donnerons suite \u00e0 votre demande au plus tard le Lundi 30 Mars 2026.",
+    `Nous donnerons suite \u00e0 votre demande au plus tard le ${fmtLong(CFG.responseBy, 'fr-FR')}.`,
     "Les demandes p\u00e9riscolaires du mercredi seront \u00e9tudi\u00e9es apr\u00e8s la finalisation des inscriptions, au plus tard d\u00e9but juin.",
   ];
   footer.forEach(line => { doc.text(line, ML, y, { maxWidth: CW }); y += 4.5; });
@@ -956,7 +995,7 @@ function generatePDF() {
   };
 
   doc.setProperties({
-    title: 'Fiche de V\u0153ux \u2013 Petit N\u00e9mo 2026\u20132027',
+    title: `Fiche de V\u0153ux \u2013 Petit N\u00e9mo ${CFG.year}`,
     subject: JSON.stringify(expandedData),
     creator: 'Petit N\u00e9mo \u2013 Fiche de V\u0153ux',
   });
@@ -979,14 +1018,14 @@ function generatePDF() {
     doc.text(codeLines, ML, qrY + 4);
   }
 
-  // Build filename: Fiche_Voeux_PetitNemo_2026-2027_{LastName}_{date}.pdf
+  // Build filename: Fiche_Voeux_PetitNemo_${CFG.year}_{LastName}_{date}.pdf
   const lastName = val('childLastName').trim().replace(/\s+/g, '_') || 'enfant';
   const today = new Date();
   const dd = String(today.getDate()).padStart(2, '0');
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const yyyy = today.getFullYear();
   const dateStr = `${yyyy}-${mm}-${dd}`;
-  doc.save(`Fiche_Voeux_PetitNemo_2026-2027_${lastName}_${dateStr}.pdf`);
+  doc.save(`Fiche_Voeux_PetitNemo_${CFG.year}_${lastName}_${dateStr}.pdf`);
 }
 
 /* ──────────────────────────────────────────────
