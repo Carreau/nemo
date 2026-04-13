@@ -125,7 +125,7 @@ td.empty { color: var(--muted); font-style: italic; }
   <h1>Fiches de Voeux – Admin</h1>
   <a href="fiche-voeux.html" style="font-size:13px;color:var(--blue);text-decoration:none;font-weight:500;">&larr; Formulaire</a>
 </div>
-<p class="subtitle">Glisser des PDF generees par le formulaire pour extraire les donnees</p>
+<p class="subtitle">Glisser des PDF générées par le formulaire pour extraire les données</p>
 
 <div class="drop-zone" id="dropZone">
   <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg>
@@ -178,7 +178,7 @@ const rows = [];
 const COLUMNS = [
   { key: 'fileName',        label: 'Fichier' },
   { key: 'child.lastName',  label: 'Nom' },
-  { key: 'child.firstName', label: 'Prenom' },
+  { key: 'child.firstName', label: 'Prénom' },
   { key: 'child.date',      label: 'Date' },
   { key: 'child.dateType',  label: 'Type date' },
   { key: 'structure',       label: 'Structure' },
@@ -190,7 +190,7 @@ const COLUMNS = [
   { key: 'vendredi',        label: 'Vendredi' },
   { key: 'vacScolaires',    label: 'Vac. scolaires' },
   { key: 'perm.choice',     label: 'Permanence' },
-  { key: 'perm.detail',     label: 'Detail permanence' },
+  { key: 'perm.detail',     label: 'Détail permanence' },
 ];
 
 function flattenData(data, fileName, code) {
