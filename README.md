@@ -8,19 +8,21 @@ Parents fill in their care preferences for the upcoming school year, then downlo
 
 | Section | Fields |
 |---|---|
-| **Child info** | Last name, first name, date of birth, expected birth date |
+| **Child info** | Last name, first name, date (auto-detects birth vs expected based on whether the date is past or future) |
 | **Facility preference** | Petit Nemo / Baby Nemo / No preference |
 | **Care type** | Regular (*regulier*) or Occasional (*occasionnel*) |
 | **Care days** | Monday-Friday checkboxes, each with a dual-handle time range slider (7h30-18h00, with enforced arrival before 9h00 and departure after 16h00) |
 | **School holidays only** | Optional checkbox |
-| **Duty shifts (permanences)** | Keep current day+period, or change with ranked preference grid (morning/afternoon x 5 days) |
+| **Duty shifts (permanences)** | Keep current slot (single selection grid) or change with ranked preference grid (1 = most preferred, 10 = least preferred) |
 
 ## Features
 
 - **Bilingual (FR/EN)** -- language toggle in the banner, all labels and PDF output switch accordingly
+- **Smart date field** -- single date input; label auto-switches between "Ne(e) le" and "Naissance prevue le" based on whether the date is past or future relative to today
 - **Time range sliders** -- dual-thumb range inputs per day with visual fill bar, constrained arrival/departure windows, and limit badges
-- **Ranked permanence selection** -- click day/period buttons to assign preference order (1, 2, 3...), click again to remove and auto-reorder
-- **PDF generation** -- client-side via [jsPDF](https://github.com/parallax/jsPDF), produces an A4 document matching the layout of the original `PN - Fiche de Voeux 2026-2027.pdf`
+- **Permanence grids** -- "keep" uses a single-select grid (pick one slot), "change" uses a ranked multi-select grid (click to assign preference order 1, 2, 3...)
+- **PDF generation** -- client-side via [jsPDF](https://github.com/parallax/jsPDF), print-friendly (light background, no heavy ink fills)
+- **Embedded JSON data** -- form data is stored as JSON in the PDF metadata for programmatic extraction (see below)
 - **Responsive** -- adapts to mobile screens
 - **Zero backend** -- no build step, no server required
 
@@ -31,6 +33,61 @@ The generated PDF must contain **all the same information visible on the HTML pa
 ## PDF filename
 
 The downloaded PDF is named `Fiche_Voeux_PetitNemo_2026-2027_{LastName}_{YYYY-MM-DD}.pdf`, including the child's last name and the download date for easy identification.
+
+## Embedded JSON data
+
+All form data is embedded in the PDF's `Subject` metadata field as a JSON string. This allows programmatic extraction without OCR or parsing the visual layout.
+
+### Extracting the data
+
+```bash
+# Python (pikepdf)
+import pikepdf, json
+pdf = pikepdf.open('Fiche_Voeux_PetitNemo_2026-2027_Martin_2026-04-13.pdf')
+data = json.loads(str(pdf.docinfo['/Subject']))
+
+# CLI (poppler-utils)
+pdfinfo file.pdf | grep Subject
+```
+
+### JSON schema
+
+```json
+{
+  "version": "2026-2027",
+  "child": {
+    "lastName": "Martin",
+    "firstName": "Lea",
+    "date": "2025-03-15",
+    "dateType": "birth"
+  },
+  "structure": "petit_nemo",
+  "typeAccueil": "regulier",
+  "days": [
+    { "day": "Lundi", "selected": true, "start": 510, "end": 1020 },
+    { "day": "Mardi", "selected": false, "start": null, "end": null },
+    ...
+  ],
+  "vacScolaires": false,
+  "permanence": {
+    "choice": "change",
+    "keep": null,
+    "changeRanks": { "lundi_matin": 1, "mardi_AM": 2 }
+  }
+}
+```
+
+| Field | Values |
+|---|---|
+| `child.dateType` | `"birth"` (past/today) or `"expected"` (future), `null` if empty |
+| `structure` | `"petit_nemo"`, `"baby_nemo"`, `"indifferent"`, or `null` |
+| `typeAccueil` | `"regulier"`, `"occasionnel"`, or `null` |
+| `days[].start/end` | Minutes since midnight (e.g. 510 = 8h30, 1020 = 17h00), `null` if day not selected |
+| `permanence.choice` | `"keep"` or `"change"`, `null` if neither selected |
+| `permanence.keep` | e.g. `"lundi_matin"`, `"jeudi_AM"`, `null` if not applicable |
+| `permanence.changeRanks` | Object mapping slot IDs to rank numbers (1 = most preferred) |
+
+Period suffixes: `_matin` = morning (9h-12h30), `_AM` = afternoon (14h30-18h).
 
 ## Architecture
 
