@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fiche de Vœux – Petit Némo 2026-2027</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="fiche-voeux.css">
@@ -161,6 +162,14 @@
     <svg viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v9.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V3a1 1 0 011-1zM3 16a1 1 0 100 2h14a1 1 0 100-2H3z"/></svg>
     <span>Télécharger le PDF pré-rempli</span>
   </button>
+</div>
+
+<!-- ── Drop overlay ── -->
+<div id="dropOverlay" class="drop-overlay">
+  <div class="drop-overlay-content">
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg>
+    <span data-i18n="drop_hint">Glisser un PDF pour pré-remplir le formulaire</span>
+  </div>
 </div>
 
 <script src="fiche-voeux.js"></script>
