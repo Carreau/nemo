@@ -7,7 +7,18 @@
       "WebFetch(domain:unpkg.com)",
       "WebFetch(domain:app.unpkg.com)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(wc -l /home/ubuntu/dev/nemo/*.html /home/ubuntu/dev/nemo/*.css /home/ubuntu/dev/nemo/*.js)",
+      "Bash(mkdir -p /home/ubuntu/dev/nemo/vendor)",
+      "Bash(curl -sLO https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js)",
+      "Bash(curl -sLO https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js)",
+      "Bash(curl -sLO https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js)",
+      "Bash(curl -sLO https://unpkg.com/qrious@4.0.2/dist/qrious.min.js)",
+      "Bash(mkdir -p /home/ubuntu/dev/nemo/vendor/fonts)",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2\" -o inter-400.woff2)",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fAZ9hiA.woff2\" -o inter-500.woff2)",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYAZ9hiA.woff2\" -o inter-600.woff2)",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYAZ9hiA.woff2\" -o inter-700.woff2)"
     ]
   }
 }
