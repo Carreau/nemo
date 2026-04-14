@@ -274,7 +274,7 @@ function renderTable() {
     var tdEdit = document.createElement('td');
     if (row._code) {
       var a = document.createElement('a');
-      a.href = 'fiche-voeux.html?code=' + encodeURIComponent(row._code);
+      a.href = 'index.html?code=' + encodeURIComponent(row._code);
       a.textContent = '\u270e';
       a.title = 'Ouvrir dans le formulaire';
       a.style.cssText = 'text-decoration:none;font-size:15px;';
