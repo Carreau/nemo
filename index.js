@@ -374,10 +374,18 @@ const T = {
 
 let lang = 'fr';
 
+// BCP47 tags for the assistive layer (Pirate is still French phonologically).
+const LANG_TAG = { fr: 'fr', en: 'en', es: 'es', de: 'de', it: 'it', pr: 'fr' };
+
 function setLang(l) {
   lang = l;
-  document.getElementById('btnFR').classList.toggle('active', l === 'fr');
-  document.getElementById('btnEN').classList.toggle('active', l === 'en');
+  const btnFR = document.getElementById('btnFR');
+  const btnEN = document.getElementById('btnEN');
+  btnFR.classList.toggle('active', l === 'fr');
+  btnEN.classList.toggle('active', l === 'en');
+  btnFR.setAttribute('aria-pressed', l === 'fr' ? 'true' : 'false');
+  btnEN.setAttribute('aria-pressed', l === 'en' ? 'true' : 'false');
+  document.documentElement.lang = LANG_TAG[l] || l;
   const t = T[l];
 
   // Text nodes — these are trusted i18n strings, not user input

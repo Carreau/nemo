@@ -14,23 +14,23 @@
 <body>
 
 <!-- ── Banner ── -->
-<div class="banner">
-  <div class="lang-toggle">
-    <button class="lang-btn active" id="btnFR" onclick="setLang('fr')">FR</button>
-    <button class="lang-btn"        id="btnEN" onclick="setLang('en')">EN</button>
+<header class="banner">
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button class="lang-btn active" id="btnFR" aria-pressed="true"  onclick="setLang('fr')">FR</button>
+    <button class="lang-btn"        id="btnEN" aria-pressed="false" onclick="setLang('en')">EN</button>
   </div>
-  <span class="fish">🐟</span>
+  <span class="fish" aria-hidden="true">🐟</span>
   <h1 data-i18n="title">Fiche de Vœux</h1>
   <h2 data-i18n="subtitle">Petit Némo &mdash; Souhaits d'accueil pour l'année 2026&ndash;2027</h2>
   <p data-i18n="since">Accueil à partir du 26 août 2026</p>
-</div>
-<div class="deadline-bar">
-  ⚠&nbsp; <span data-i18n="deadline">À nous retourner avant le <strong>23 Février 2026</strong></span>
+</header>
+<div class="deadline-bar" role="note">
+  <span aria-hidden="true">⚠&nbsp;</span><span data-i18n="deadline">À nous retourner avant le <strong>23 Février 2026</strong></span>
 </div>
 
 <div class="form-body">
 
-  <div id="draftBanner" class="draft-banner" hidden>
+  <div id="draftBanner" class="draft-banner" role="status" aria-live="polite" hidden>
     <span data-i18n="draft_restored">✓ Brouillon restauré</span>
     <button type="button" onclick="dismissDraftBanner()" data-i18n="draft_dismiss">OK</button>
     <button type="button" onclick="clearForm()" class="draft-clear" data-i18n="draft_clear">Effacer</button>
@@ -39,7 +39,7 @@
   <!-- ── Enfant ── -->
   <div class="card">
     <div class="card-header">
-      <span class="icon">👶</span>
+      <span class="icon" aria-hidden="true">👶</span>
       <h3 data-i18n="card_child">Informations sur l'enfant</h3>
     </div>
     <div class="card-body">
@@ -54,8 +54,8 @@
         </div>
         <div class="field">
           <label for="childDate" id="childDateLabel">Né(e) le / Naissance prévue le</label>
-          <input type="date" id="childDate">
-          <span id="childDateHint" style="font-size:11px;color:var(--muted);min-height:16px;"></span>
+          <input type="date" id="childDate" aria-describedby="childDateHint">
+          <span id="childDateHint" class="child-date-hint" aria-live="polite"></span>
         </div>
       </div>
     </div>
@@ -64,7 +64,7 @@
   <!-- ── Structure ── -->
   <div class="card">
     <div class="card-header">
-      <span class="icon">🏠</span>
+      <span class="icon" aria-hidden="true">🏠</span>
       <h3 data-i18n="card_structure">Structure d'accueil souhaitée</h3>
     </div>
     <div class="card-body">
@@ -79,7 +79,7 @@
   <!-- ── Type ── -->
   <div class="card">
     <div class="card-header">
-      <span class="icon">📋</span>
+      <span class="icon" aria-hidden="true">📋</span>
       <h3 data-i18n="card_type">Type d'accueil souhaité</h3>
     </div>
     <div class="card-body">
@@ -93,55 +93,55 @@
   <!-- ── Jours ── -->
   <div class="card">
     <div class="card-header">
-      <span class="icon">📅</span>
-      <h3><span data-i18n="card_days">Jours d'accueil souhaités</span> <span style="font-weight:400;opacity:.7;font-size:12px;" data-i18n="card_days_sub">(7h30 – 18h00)</span></h3>
+      <span class="icon" aria-hidden="true">📅</span>
+      <h3><span data-i18n="card_days">Jours d'accueil souhaités</span> <span class="card-sub-label" data-i18n="card_days_sub">(7h30 – 18h00)</span></h3>
     </div>
     <div class="card-body">
       <div class="days-grid" id="daysGrid"><!-- JS --></div>
-      <label class="vac-label" id="vacLabel" style="margin-top:14px;">
+      <label class="vac-label" id="vacLabel">
         <input type="checkbox" id="vacScolaires">
         <span data-i18n="vac">Uniquement pendant les vacances scolaires</span>
       </label>
-      <div style="font-size:10.5px;color:var(--muted);margin-top:10px;" data-i18n="days_footnote">Arrivée entre 7h30 et 9h00 · Départ entre 16h00 et 18h00</div>
+      <div class="days-footnote" data-i18n="days_footnote">Arrivée entre 7h30 et 9h00 · Départ entre 16h00 et 18h00</div>
     </div>
   </div>
 
   <!-- ── Permanences ── -->
   <div class="card">
     <div class="card-header">
-      <span class="icon">🔄</span>
-      <h3><span data-i18n="card_perm">Permanences souhaitées</span> <span style="font-weight:400;opacity:.7;font-size:12px;" data-i18n="card_perm_sub">matin 9h–12h30 · après-midi 14h30–18h</span></h3>
+      <span class="icon" aria-hidden="true">🔄</span>
+      <h3><span data-i18n="card_perm">Permanences souhaitées</span> <span class="card-sub-label" data-i18n="card_perm_sub">matin 9h–12h30 · après-midi 14h30–18h</span></h3>
     </div>
     <div class="card-body">
       <div class="perm-options">
 
         <!-- Keep -->
         <div class="perm-opt" id="permKeepOpt">
-          <div class="perm-opt-header" onclick="selectPerm('keep')">
+          <label class="perm-opt-header">
             <input type="radio" name="permanence" id="permKeep" value="keep" onclick="selectPerm('keep')">
             <span data-i18n="perm_keep_label">Je souhaite <strong>conserver</strong> mon jour de permanence</span>
-          </div>
+          </label>
           <div class="perm-opt-body">
-            <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;" data-i18n="perm_keep_hint">Sélectionner votre créneau actuel :</div>
+            <div class="perm-hint" data-i18n="perm_keep_hint">Sélectionner votre créneau actuel :</div>
             <div class="perm-change-grid" id="permKeepGrid"><!-- JS --></div>
           </div>
         </div>
 
         <!-- Change -->
         <div class="perm-opt" id="permChangeOpt">
-          <div class="perm-opt-header" onclick="selectPerm('change')">
+          <label class="perm-opt-header">
             <input type="radio" name="permanence" id="permChange" value="change" onclick="selectPerm('change')">
             <span data-i18n="perm_change_label">Je souhaite <strong>changer</strong> mon jour de permanence</span>
-          </div>
+          </label>
           <div class="perm-opt-body">
-            <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;" data-i18n="perm_change_hint">Préciser par ordre de préférence (1 = préféré, 10 = moins souhaité) :</div>
+            <div class="perm-hint" data-i18n="perm_change_hint">Préciser par ordre de préférence (1 = préféré, 10 = moins souhaité) :</div>
             <div class="perm-change-grid" id="permChangeGrid"><!-- JS --></div>
           </div>
         </div>
 
       </div>
 
-      <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-top:10px;">
+      <div class="perm-notes">
         <strong data-i18n="note_reg">Contrat régulier :</strong> <span data-i18n="note_reg_val">une permanence de 3h30 tous les 15 jours.</span>
         &mdash;
         <strong data-i18n="note_occ">Présences occasionnelles :</strong> <span data-i18n="note_occ_val">une permanence de 3h30 toutes les 10 présences.</span>
@@ -162,22 +162,21 @@
   </div>
 
   <!-- ── QR Preview (debug only) ── -->
-  <div class="card" id="qrCard" hidden>
+  <div class="card qr-card" id="qrCard" hidden>
     <div class="card-header">
-      <span class="icon">📱</span>
+      <span class="icon" aria-hidden="true">📱</span>
       <h3>QR Code</h3>
     </div>
-    <div class="card-body" style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
-      <canvas id="qrPreview" width="120" height="120" style="border:1px solid var(--border);border-radius:6px;flex-shrink:0;"></canvas>
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;">
-          QR code et code texte inclus dans le PDF.
-        </div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">CODE D'IMPORT</div>
-        <div id="importCode" style="font-family:monospace;font-size:11px;word-break:break-all;background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:8px;max-height:80px;overflow-y:auto;user-select:all;cursor:text;color:var(--text);"></div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <input type="text" id="codeInput" placeholder="Coller un code N1... ici" style="flex:1;border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;font-family:monospace;outline:none;">
-          <button onclick="importFromCode()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;">Importer</button>
+    <div class="card-body qr-card-body">
+      <canvas id="qrPreview" class="qr-canvas" width="120" height="120" role="img" aria-label="QR code"></canvas>
+      <div class="qr-side">
+        <div class="qr-desc">QR code et code texte inclus dans le PDF.</div>
+        <div class="qr-code-label">CODE D'IMPORT</div>
+        <div id="importCode" class="qr-code-box" aria-label="Code d'import actuel"></div>
+        <div class="qr-import-row">
+          <label for="codeInput" class="visually-hidden">Coller un code N1</label>
+          <input type="text" id="codeInput" class="qr-code-input" placeholder="Coller un code N1... ici">
+          <button type="button" onclick="importFromCode()" class="qr-import-btn">Importer</button>
         </div>
       </div>
     </div>
@@ -205,8 +204,9 @@
   </label>
   <span class="footer-sep">·</span>
   <label class="footer-lang-wrap">
-    <span data-i18n="more_lang">🌍</span>
-    <select class="footer-lang" onchange="pickFooterLang(this)">
+    <span aria-hidden="true">🌍</span>
+    <span class="visually-hidden" data-i18n="more_lang">Plus de langues</span>
+    <select class="footer-lang" onchange="pickFooterLang(this)" aria-label="Plus de langues">
       <option value="">—</option>
       <option value="es">🇪🇸 Español</option>
       <option value="de">🇩🇪 Deutsch</option>
@@ -218,12 +218,12 @@
   <a href="admin.html" class="footer-admin">Admin</a>
 </div>
 
-<button onclick="clearForm()" style="position:fixed;bottom:12px;right:12px;z-index:50;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;opacity:.5;">Clear</button>
+<button type="button" class="btn-clear-fixed" onclick="clearForm()" data-i18n="draft_clear">Effacer</button>
 
 <!-- ── Drop overlay ── -->
-<div id="dropOverlay" class="drop-overlay">
+<div id="dropOverlay" class="drop-overlay" aria-hidden="true">
   <div class="drop-overlay-content">
-    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg>
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg>
     <span data-i18n="drop_hint">Glisser un PDF pour pré-remplir le formulaire</span>
   </div>
 </div>
