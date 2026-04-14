@@ -102,8 +102,11 @@ const T = {
     dl_btn:             'Télécharger le PDF pré-rempli',
     dl_blank_btn:       'Télécharger une fiche vierge',
     drop_hint:          'Glisser un PDF pour pré-remplir le formulaire',
-    no_cookie:          'Aucun cookie. Aucune donnée transmise ou enregistrée sur un serveur.',
+    no_cookie:          'Aucun cookie, aucune donnée envoyée. Brouillon sauvegardé localement dans votre navigateur.',
     debug:              'Debug',
+    draft_restored:     '✓ Brouillon restauré depuis votre navigateur',
+    draft_dismiss:      'OK',
+    draft_clear:        'Effacer',
   },
   en: {
     title:              'Care Preference Form',
@@ -153,8 +156,11 @@ const T = {
     dl_btn:             'Download pre-filled PDF',
     dl_blank_btn:       'Download a blank form',
     drop_hint:          'Drop a PDF to pre-fill the form',
-    no_cookie:          'No cookies. No data transmitted or stored on any server.',
+    no_cookie:          'No cookies, nothing sent. Draft saved locally in your browser.',
     debug:              'Debug',
+    draft_restored:     '✓ Draft restored from your browser',
+    draft_dismiss:      'OK',
+    draft_clear:        'Clear',
   },
   es: {
     title:              'Ficha de Deseos',
@@ -202,8 +208,11 @@ const T = {
     dl_btn:             'Descargar PDF pre-rellenado',
     dl_blank_btn:       'Descargar ficha en blanco',
     drop_hint:          'Arrastre un PDF para pre-rellenar el formulario',
-    no_cookie:          'Sin cookies. Ningún dato transmitido ni almacenado en ningún servidor.',
+    no_cookie:          'Sin cookies, nada enviado. Borrador guardado localmente en su navegador.',
     debug:              'Depuración',
+    draft_restored:     '✓ Borrador restaurado desde su navegador',
+    draft_dismiss:      'OK',
+    draft_clear:        'Borrar',
   },
   de: {
     title:              'Wunschformular',
@@ -251,8 +260,11 @@ const T = {
     dl_btn:             'Vorausgefülltes PDF herunterladen',
     dl_blank_btn:       'Leeres Formular herunterladen',
     drop_hint:          'PDF hierher ziehen, um das Formular vorauszufüllen',
-    no_cookie:          'Keine Cookies. Keine Daten werden gesendet oder gespeichert.',
+    no_cookie:          'Keine Cookies, nichts gesendet. Entwurf lokal in Ihrem Browser gespeichert.',
     debug:              'Debug',
+    draft_restored:     '✓ Entwurf aus Ihrem Browser wiederhergestellt',
+    draft_dismiss:      'OK',
+    draft_clear:        'Löschen',
   },
   it: {
     title:              'Scheda dei Desideri',
@@ -300,8 +312,11 @@ const T = {
     dl_btn:             'Scarica PDF pre-compilato',
     dl_blank_btn:       'Scarica scheda in bianco',
     drop_hint:          'Trascina un PDF per pre-compilare il modulo',
-    no_cookie:          'Nessun cookie. Nessun dato trasmesso o memorizzato su alcun server.',
+    no_cookie:          'Nessun cookie, nulla inviato. Bozza salvata localmente nel browser.',
     debug:              'Debug',
+    draft_restored:     '✓ Bozza ripristinata dal browser',
+    draft_dismiss:      'OK',
+    draft_clear:        'Cancella',
   },
   pr: {
     title:              "Arrr ! Registre du Cap'taine",
@@ -349,8 +364,11 @@ const T = {
     dl_btn:             'Piller le parchemin pré-rempli',
     dl_blank_btn:       'Piller un parchemin vierge',
     drop_hint:          'Largue un PDF sur le pont pour remplir le parchemin, moussaillon',
-    no_cookie:          "Pas un biscuit. Aucune donnée envoyée ni gardée sur un serveur.",
+    no_cookie:          "Pas un biscuit, rien envoyé. Parchemin gardé dans ta cale de navigateur, moussaillon.",
     debug:              'Boussole secrète',
+    draft_restored:     "✓ Parchemin retrouvé dans ta cale, mille sabords !",
+    draft_dismiss:      'Paré',
+    draft_clear:        'À la mer',
   }
 };
 
@@ -692,12 +710,18 @@ if (typeof pdfjsLib !== 'undefined') {
 // Load config and apply date-dependent strings, then check URL for import code
 loadConfig().then(() => {
   const urlCode = new URLSearchParams(window.location.search).get('code');
+  let restoredFromUrl = false;
   if (urlCode && urlCode.startsWith('N1')) {
     try {
       const compact = decodeQRBinary(urlCode);
-      if (compact) fillFormFromData(expandCompactToObj(compact));
+      if (compact) { fillFormFromData(expandCompactToObj(compact)); restoredFromUrl = true; }
     } catch (e) { console.error('URL code import failed:', e); }
   }
+  // Auto-restore from localStorage draft if no URL code was used
+  if (!restoredFromUrl && loadDraft()) {
+    document.getElementById('draftBanner').hidden = false;
+  }
+  draftReady = true;
 });
 
 /* ──────────────────────────────────────────────
@@ -749,6 +773,52 @@ function updateQR() {
   if (qr) qr.value = code;
   const codeEl = document.getElementById('importCode');
   if (codeEl) codeEl.textContent = code;
+  saveDraft(compact, code);
+}
+
+/* ──────────────────────────────────────────────
+   Draft autosave (localStorage)
+────────────────────────────────────────────── */
+const DRAFT_KEY = 'nemo-draft-v1';
+let draftReady = false;
+
+function isEmptyCompact(c) {
+  if (!Array.isArray(c)) return true;
+  const [, child, struct, type, days, vac, perm] = c;
+  const [ln, fn, dt] = child || [];
+  if (ln || fn || dt) return false;
+  if (struct || type) return false;
+  if (Array.isArray(days) && days.some(d => d)) return false;
+  if (vac) return false;
+  if (perm) return false;
+  return true;
+}
+
+function saveDraft(compact, code) {
+  if (!draftReady) return;
+  try {
+    if (isEmptyCompact(compact)) localStorage.removeItem(DRAFT_KEY);
+    else localStorage.setItem(DRAFT_KEY, code);
+  } catch (e) { /* quota / disabled — ignore */ }
+}
+
+function loadDraft() {
+  try {
+    const code = localStorage.getItem(DRAFT_KEY);
+    if (!code || !code.startsWith('N1')) return false;
+    const compact = decodeQRBinary(code);
+    if (!compact) return false;
+    fillFormFromData(expandCompactToObj(compact));
+    return true;
+  } catch (e) { return false; }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+}
+
+function dismissDraftBanner() {
+  document.getElementById('draftBanner').hidden = true;
 }
 
 // Debounced live update
@@ -1128,6 +1198,8 @@ function generatePDF(opts) {
    Clear form
 ────────────────────────────────────────────── */
 function clearForm() {
+  clearDraft();
+  dismissDraftBanner();
   document.getElementById('childLastName').value = '';
   document.getElementById('childFirstName').value = '';
   document.getElementById('childDate').value = '';
@@ -1155,6 +1227,7 @@ function clearForm() {
   rebuildPermKeepGrid();
   Object.keys(permRanks).forEach(k => delete permRanks[k]);
   rebuildPermGrid();
+  updateQR();
 }
 
 /* ──────────────────────────────────────────────

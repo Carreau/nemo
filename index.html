@@ -30,6 +30,12 @@
 
 <div class="form-body">
 
+  <div id="draftBanner" class="draft-banner" hidden>
+    <span data-i18n="draft_restored">✓ Brouillon restauré</span>
+    <button type="button" onclick="dismissDraftBanner()" data-i18n="draft_dismiss">OK</button>
+    <button type="button" onclick="clearForm()" class="draft-clear" data-i18n="draft_clear">Effacer</button>
+  </div>
+
   <!-- ── Enfant ── -->
   <div class="card">
     <div class="card-header">
@@ -191,7 +197,7 @@
 </div>
 
 <div class="page-footer">
-  <span data-i18n="no_cookie">Aucun cookie. Aucune donnée transmise ou enregistrée sur un serveur.</span>
+  <span data-i18n="no_cookie">Aucun cookie, aucune donnée envoyée. Brouillon sauvegardé localement dans votre navigateur.</span>
   <span class="footer-sep">·</span>
   <label class="footer-debug">
     <input type="checkbox" id="debugToggle" onchange="toggleDebug()">
