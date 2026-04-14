@@ -4,7 +4,7 @@ Interactive web form for **Petit Nemo**, a French parent-run childcare facility 
 
 ## Pages
 
-### `fiche-voeux.html` -- Parent form
+### `index.html` -- Parent form
 
 The main form parents use. Collects:
 
@@ -115,9 +115,9 @@ A Cloudflare Worker (TypeScript) backend could be added later for submission col
 
 ```
 config.json                   Year-specific dates (single source of truth)
-fiche-voeux.html              Parent form (markup)
-fiche-voeux.css               Styles (includes self-hosted @font-face)
-fiche-voeux.js                i18n, UI logic, PDF generation, QR live preview
+index.html                    Parent form (markup)
+index.css                     Styles (includes self-hosted @font-face)
+index.js                      i18n, UI logic, PDF generation, QR live preview
 nemo-codec.js                 Shared binary QR codec (encode/decode/expand)
 admin.html                    Admin dashboard (uses shared codec)
 vendor/

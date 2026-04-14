@@ -1,6 +1,6 @@
 /* ──────────────────────────────────────────────
    Shared binary QR codec for Petit Némo forms
-   Used by both fiche-voeux.js and admin.html
+   Used by both index.js and admin.html
 
    Binary layout (schema v1):
      Byte 0 — flags:
