@@ -16,7 +16,6 @@
 <!-- ── Banner ── -->
 <div class="banner">
   <div class="lang-toggle">
-    <a href="admin.html" class="lang-btn" style="text-decoration:none;">Admin</a>
     <button class="lang-btn active" id="btnFR" onclick="setLang('fr')">FR</button>
     <button class="lang-btn"        id="btnEN" onclick="setLang('en')">EN</button>
   </div>
@@ -156,8 +155,8 @@
     <span data-i18n="footer3">Les demandes périscolaires du mercredi seront étudiées après la finalisation des inscriptions des nouvelles familles, au plus tard début juin.</span>
   </div>
 
-  <!-- ── QR Preview ── -->
-  <div class="card" id="qrCard">
+  <!-- ── QR Preview (debug only) ── -->
+  <div class="card" id="qrCard" hidden>
     <div class="card-header">
       <span class="icon">📱</span>
       <h3>QR Code</h3>
@@ -184,11 +183,34 @@
 <div class="sticky-bar">
   <button class="btn-download" onclick="generatePDF()">
     <svg viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v9.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V3a1 1 0 011-1zM3 16a1 1 0 100 2h14a1 1 0 100-2H3z"/></svg>
-    <span>Télécharger le PDF pré-rempli</span>
+    <span class="btn-download-label">Télécharger le PDF pré-rempli</span>
+  </button>
+  <button class="btn-download-blank" onclick="generatePDF({ blank: true })">
+    <span class="btn-download-blank-label">Télécharger une fiche vierge</span>
   </button>
 </div>
 
-<div style="text-align:center;padding:12px 16px 4px;font-size:10px;color:var(--muted);">Aucun cookie. Aucune donnée transmise ou enregistrée sur un serveur.</div>
+<div class="page-footer">
+  <span data-i18n="no_cookie">Aucun cookie. Aucune donnée transmise ou enregistrée sur un serveur.</span>
+  <span class="footer-sep">·</span>
+  <label class="footer-debug">
+    <input type="checkbox" id="debugToggle" onchange="toggleDebug()">
+    <span data-i18n="debug">Debug</span>
+  </label>
+  <span class="footer-sep">·</span>
+  <label class="footer-lang-wrap">
+    <span data-i18n="more_lang">🌍</span>
+    <select class="footer-lang" onchange="pickFooterLang(this)">
+      <option value="">—</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="pr">🏴‍☠️ Pirate</option>
+    </select>
+  </label>
+  <span class="footer-sep">·</span>
+  <a href="admin.html" class="footer-admin">Admin</a>
+</div>
 
 <button onclick="clearForm()" style="position:fixed;bottom:12px;right:12px;z-index:50;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;opacity:.5;">Clear</button>
 

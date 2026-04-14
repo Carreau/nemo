@@ -30,6 +30,22 @@ async function loadConfig() {
   T.en.since      = `Care starting ${fmtLong(CFG.careStart, 'en-US')}`;
   T.en.deadline   = `To be returned before <strong>${fmtLong(CFG.deadline, 'en-US')}</strong>`;
   T.en.footer2    = `We will respond to your request by <strong>${fmtLong(CFG.responseBy, 'en-US')}</strong> at the latest.`;
+  T.es.subtitle   = `Petit N\u00e9mo \u2014 Preferencias de acogida para ${CFG.year}`;
+  T.es.since      = `Acogida a partir del ${fmtLong(CFG.careStart, 'es-ES')}`;
+  T.es.deadline   = `A devolver antes del <strong>${fmtLong(CFG.deadline, 'es-ES')}</strong>`;
+  T.es.footer2    = `Responderemos a su solicitud a m\u00e1s tardar el <strong>${fmtLong(CFG.responseBy, 'es-ES')}</strong>.`;
+  T.de.subtitle   = `Petit N\u00e9mo \u2014 Betreuungsw\u00fcnsche f\u00fcr ${CFG.year}`;
+  T.de.since      = `Betreuung ab ${fmtLong(CFG.careStart, 'de-DE')}`;
+  T.de.deadline   = `Zur\u00fcckzusenden vor dem <strong>${fmtLong(CFG.deadline, 'de-DE')}</strong>`;
+  T.de.footer2    = `Wir beantworten Ihre Anfrage sp\u00e4testens am <strong>${fmtLong(CFG.responseBy, 'de-DE')}</strong>.`;
+  T.it.subtitle   = `Petit N\u00e9mo \u2014 Desideri di accoglienza per ${CFG.year}`;
+  T.it.since      = `Accoglienza a partire dal ${fmtLong(CFG.careStart, 'it-IT')}`;
+  T.it.deadline   = `Da restituire entro il <strong>${fmtLong(CFG.deadline, 'it-IT')}</strong>`;
+  T.it.footer2    = `Risponderemo alla sua richiesta entro il <strong>${fmtLong(CFG.responseBy, 'it-IT')}</strong>.`;
+  T.pr.subtitle   = `Petit N\u00e9mo \u2014 Cap'n's roster fer ${CFG.year}`;
+  T.pr.since      = `Settin' sail from ${fmtLong(CFG.careStart, 'en-US')}, arrr`;
+  T.pr.deadline   = `Turn this scroll in afore <strong>${fmtLong(CFG.deadline, 'en-US')}</strong>, matey`;
+  T.pr.footer2    = `We'll signal ye back by <strong>${fmtLong(CFG.responseBy, 'en-US')}</strong>, savvy?`;
   // Re-apply current language
   setLang(lang);
 }
@@ -84,7 +100,10 @@ const T = {
     footer2:            '',
     footer3:            'Les demandes périscolaires du mercredi seront étudiées après la finalisation des inscriptions des nouvelles familles, au plus tard début juin.',
     dl_btn:             'Télécharger le PDF pré-rempli',
+    dl_blank_btn:       'Télécharger une fiche vierge',
     drop_hint:          'Glisser un PDF pour pré-remplir le formulaire',
+    no_cookie:          'Aucun cookie. Aucune donnée transmise ou enregistrée sur un serveur.',
+    debug:              'Debug',
   },
   en: {
     title:              'Care Preference Form',
@@ -132,7 +151,206 @@ const T = {
     footer2:            '',
     footer3:            'Wednesday after-school requests will be reviewed after finalising new family registrations, by early June at the latest.',
     dl_btn:             'Download pre-filled PDF',
+    dl_blank_btn:       'Download a blank form',
     drop_hint:          'Drop a PDF to pre-fill the form',
+    no_cookie:          'No cookies. No data transmitted or stored on any server.',
+    debug:              'Debug',
+  },
+  es: {
+    title:              'Ficha de Deseos',
+    subtitle:           '', since: '', deadline: '',
+    card_child:         'Información del niño',
+    card_structure:     'Estructura de acogida deseada',
+    card_type:          'Tipo de acogida deseado',
+    card_days:          'Días de acogida deseados',
+    card_days_sub:      '7:30 \u2013 18:00',
+    card_perm:          'Turnos de guardia deseados',
+    card_perm_sub:      'mañana 9h\u201312:30 \u00b7 tarde 14:30\u201318h',
+    label_lastname:     'Apellido del niño',
+    label_firstname:    'Nombre del niño',
+    label_birthdate:    'Fecha de nacimiento',
+    label_birthexpected:'Fecha prevista de nacimiento',
+    hint_born:          'Fecha pasada → niño ya nacido',
+    hint_expected:      'Fecha futura → nacimiento previsto',
+    ph_lastname:        'Ej.: Martín',
+    ph_firstname:       'Ej.: Lía',
+    opt_petit_nemo:     'Petit Nemo',
+    opt_baby_nemo:      'Baby Nemo',
+    opt_indifferent:    'Indiferente',
+    opt_regulier:       'Acogida regular',
+    opt_occasionnel:    'Acogida ocasional',
+    days:               ['Lunes','Martes','Miércoles','Jueves','Viernes'],
+    de: 'de', a: 'a',
+    vac:                'Solo durante las vacaciones escolares',
+    days_footnote:      'Llegada entre 7:30 y 9:00 \u00b7 Salida entre 16:00 y 18:00',
+    perm_keep_label:    'Deseo <strong>conservar</strong> mi día de guardia',
+    perm_keep_current:  'Día actual:',
+    perm_keep_hint:     'Seleccione su horario actual:',
+    perm_change_label:  'Deseo <strong>cambiar</strong> mi día de guardia',
+    perm_change_hint:   'Indique por orden de preferencia (1 = preferido, 10 = menos deseado):',
+    periods:            [['matin','Mañana'],['AM','Tarde']],
+    opt_choose:         '— Elegir —',
+    note_reg:           'Contrato regular:',
+    note_reg_val:       'una guardia de 3h30 cada 15 días.',
+    note_occ:           'Asistencia ocasional:',
+    note_occ_val:       'una guardia de 3h30 cada 10 asistencias.',
+    note_groups_title:  'Horarios habituales por grupo:',
+    note_groups_body:   '🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (pequeños) — guardias habitualmente por la <strong>tarde</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (mayores) — guardias habitualmente por la <strong>mañana</strong>',
+    footer1:            'Cualquier modificación de estos deseos debe ser aprobada por la Dirección.',
+    footer2:            '',
+    footer3:            'Las solicitudes extraescolares del miércoles se revisarán tras la finalización de las inscripciones, a más tardar a principios de junio.',
+    dl_btn:             'Descargar PDF pre-rellenado',
+    dl_blank_btn:       'Descargar ficha en blanco',
+    drop_hint:          'Arrastre un PDF para pre-rellenar el formulario',
+    no_cookie:          'Sin cookies. Ningún dato transmitido ni almacenado en ningún servidor.',
+    debug:              'Depuración',
+  },
+  de: {
+    title:              'Wunschformular',
+    subtitle:           '', since: '', deadline: '',
+    card_child:         'Angaben zum Kind',
+    card_structure:     'Gewünschte Betreuungseinrichtung',
+    card_type:          'Gewünschte Betreuungsart',
+    card_days:          'Gewünschte Betreuungstage',
+    card_days_sub:      '7:30 \u2013 18:00',
+    card_perm:          'Gewünschte Dienste',
+    card_perm_sub:      'Vormittag 9\u201312:30 Uhr \u00b7 Nachmittag 14:30\u201318 Uhr',
+    label_lastname:     'Nachname des Kindes',
+    label_firstname:    'Vorname des Kindes',
+    label_birthdate:    'Geburtsdatum',
+    label_birthexpected:'Voraussichtlicher Geburtstermin',
+    hint_born:          'Vergangenes Datum → Kind bereits geboren',
+    hint_expected:      'Zukünftiges Datum → Geburt steht bevor',
+    ph_lastname:        'z. B. Müller',
+    ph_firstname:       'z. B. Lea',
+    opt_petit_nemo:     'Petit Nemo',
+    opt_baby_nemo:      'Baby Nemo',
+    opt_indifferent:    'Egal',
+    opt_regulier:       'Regelmäßige Betreuung',
+    opt_occasionnel:    'Gelegentliche Betreuung',
+    days:               ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag'],
+    de: 'von', a: 'bis',
+    vac:                'Nur während der Schulferien',
+    days_footnote:      'Ankunft zwischen 7:30 und 9:00 \u00b7 Abfahrt zwischen 16:00 und 18:00',
+    perm_keep_label:    'Ich möchte meinen Diensttag <strong>beibehalten</strong>',
+    perm_keep_current:  'Aktueller Tag:',
+    perm_keep_hint:     'Wählen Sie Ihren aktuellen Zeitraum:',
+    perm_change_label:  'Ich möchte meinen Diensttag <strong>ändern</strong>',
+    perm_change_hint:   'Nach Präferenz angeben (1 = bevorzugt, 10 = am wenigsten gewünscht):',
+    periods:            [['matin','Vormittag'],['AM','Nachmittag']],
+    opt_choose:         '— Wählen —',
+    note_reg:           'Regelmäßiger Vertrag:',
+    note_reg_val:       'ein 3:30-Dienst alle 15 Tage.',
+    note_occ:           'Gelegentliche Anwesenheit:',
+    note_occ_val:       'ein 3:30-Dienst alle 10 Anwesenheiten.',
+    note_groups_title:  'Übliche Zeiten je Gruppe:',
+    note_groups_body:   '🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (jüngere) — Dienste meist am <strong>Nachmittag</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (ältere) — Dienste meist am <strong>Vormittag</strong>',
+    footer1:            'Jede Änderung dieser Wünsche bedarf der Zustimmung der Leitung.',
+    footer2:            '',
+    footer3:            'Mittwochs-Nachschulbetreuungsanfragen werden nach Abschluss der Einschreibungen geprüft, spätestens Anfang Juni.',
+    dl_btn:             'Vorausgefülltes PDF herunterladen',
+    dl_blank_btn:       'Leeres Formular herunterladen',
+    drop_hint:          'PDF hierher ziehen, um das Formular vorauszufüllen',
+    no_cookie:          'Keine Cookies. Keine Daten werden gesendet oder gespeichert.',
+    debug:              'Debug',
+  },
+  it: {
+    title:              'Scheda dei Desideri',
+    subtitle:           '', since: '', deadline: '',
+    card_child:         'Informazioni sul bambino',
+    card_structure:     'Struttura di accoglienza desiderata',
+    card_type:          'Tipo di accoglienza desiderato',
+    card_days:          'Giorni di accoglienza desiderati',
+    card_days_sub:      '7:30 \u2013 18:00',
+    card_perm:          'Turni di permanenza desiderati',
+    card_perm_sub:      'mattina 9\u201312:30 \u00b7 pomeriggio 14:30\u201318',
+    label_lastname:     'Cognome del bambino',
+    label_firstname:    'Nome del bambino',
+    label_birthdate:    'Data di nascita',
+    label_birthexpected:'Data prevista di nascita',
+    hint_born:          'Data passata → bambino già nato',
+    hint_expected:      'Data futura → nascita prevista',
+    ph_lastname:        'Es.: Rossi',
+    ph_firstname:       'Es.: Lea',
+    opt_petit_nemo:     'Petit Nemo',
+    opt_baby_nemo:      'Baby Nemo',
+    opt_indifferent:    'Indifferente',
+    opt_regulier:       'Accoglienza regolare',
+    opt_occasionnel:    'Accoglienza occasionale',
+    days:               ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì'],
+    de: 'dalle', a: 'alle',
+    vac:                'Solo durante le vacanze scolastiche',
+    days_footnote:      'Arrivo tra le 7:30 e le 9:00 \u00b7 Uscita tra le 16:00 e le 18:00',
+    perm_keep_label:    'Desidero <strong>mantenere</strong> il mio giorno di permanenza',
+    perm_keep_current:  'Giorno attuale:',
+    perm_keep_hint:     'Seleziona il tuo turno attuale:',
+    perm_change_label:  'Desidero <strong>cambiare</strong> il mio giorno di permanenza',
+    perm_change_hint:   'Indicare in ordine di preferenza (1 = preferito, 10 = meno desiderato):',
+    periods:            [['matin','Mattina'],['AM','Pomeriggio']],
+    opt_choose:         '— Scegliere —',
+    note_reg:           'Contratto regolare:',
+    note_reg_val:       'un turno di 3h30 ogni 15 giorni.',
+    note_occ:           'Presenze occasionali:',
+    note_occ_val:       'un turno di 3h30 ogni 10 presenze.',
+    note_groups_title:  'Orari abituali per gruppo:',
+    note_groups_body:   '🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (piccoli) — turni solitamente di <strong>pomeriggio</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (grandi) — turni solitamente di <strong>mattina</strong>',
+    footer1:            'Qualsiasi modifica a questi desideri deve essere approvata dalla Direzione.',
+    footer2:            '',
+    footer3:            'Le richieste extrascolastiche del mercoledì saranno esaminate dopo la finalizzazione delle iscrizioni, al più tardi all\'inizio di giugno.',
+    dl_btn:             'Scarica PDF pre-compilato',
+    dl_blank_btn:       'Scarica scheda in bianco',
+    drop_hint:          'Trascina un PDF per pre-compilare il modulo',
+    no_cookie:          'Nessun cookie. Nessun dato trasmesso o memorizzato su alcun server.',
+    debug:              'Debug',
+  },
+  pr: {
+    title:              "Arrr! Cap'n's Roster",
+    subtitle:           '', since: '', deadline: '',
+    card_child:         "Wee scallywag's details",
+    card_structure:     "Ship o' choice",
+    card_type:          "Manner o' sailin'",
+    card_days:          "Days at sea",
+    card_days_sub:      '0730 bells \u2013 1800 bells',
+    card_perm:          "Watches ye stand",
+    card_perm_sub:      "mornin' 0900\u20121230 \u00b7 afternoon 1430\u20121800",
+    label_lastname:     "Surname o' th' lil'un",
+    label_firstname:    "First name o' th' lil'un",
+    label_birthdate:    'Born on',
+    label_birthexpected:'Expected landfall',
+    hint_born:          "Past date → lil'un has landed",
+    hint_expected:      "Future date → lil'un en route",
+    ph_lastname:        'e.g., Blackbeard',
+    ph_firstname:       'e.g., Anne',
+    opt_petit_nemo:     'Wee Nemo',
+    opt_baby_nemo:      'Bilge Baby Nemo',
+    opt_indifferent:    'Any port in a storm',
+    opt_regulier:       "Regular sailin'",
+    opt_occasionnel:    'Occasional voyages',
+    days:               ['Mondee','Chewsdee','Wensdee','Thursdee','Fridee'],
+    de: 'from', a: 'to',
+    vac:                'Only durin\' school shore-leave',
+    days_footnote:      "Weigh anchor 0730\u20120900 \u00b7 Make port 1600\u20121800",
+    perm_keep_label:    "I be wantin' to <strong>keep</strong> me current watch",
+    perm_keep_current:  'Current watch:',
+    perm_keep_hint:     'Pick yer current bell:',
+    perm_change_label:  "I be wantin' to <strong>change</strong> me watch",
+    perm_change_hint:   'List by favour (1 = most preferred, 10 = least wanted):',
+    periods:            [['matin','Mornin\''],['AM','Afternoon']],
+    opt_choose:         '— Pick, ye scurvy dog —',
+    note_reg:           'Regular articles:',
+    note_reg_val:       "a 3-bell-30 watch ev'ry fortnight.",
+    note_occ:           'Occasional appearance:',
+    note_occ_val:       "a 3-bell-30 watch ev'ry 10 visits.",
+    note_groups_title:  'Usual bells by crew:',
+    note_groups_body:   '🐙 <strong>Poulpes &amp; 🦀 Crabes</strong> (young swabs) — watch usually in th\' <strong>afternoon</strong> &nbsp;·&nbsp; 🐟 <strong>Poissons &amp; 🐢 Tortues</strong> (old sea dogs) — watch usually at <strong>dawn</strong>',
+    footer1:            "Any change to these desires be approved by th' Cap'n.",
+    footer2:            '',
+    footer3:            'Wednesday shore-leave requests be reviewed once th\' manifest be signed, no later than early June.',
+    dl_btn:             "Plunder th' pre-filled parchment",
+    dl_blank_btn:       'Plunder a blank parchment',
+    drop_hint:          'Drop a PDF on deck to pre-fill th\' manifest, matey',
+    no_cookie:          'Nary a cookie. No data cast to any server.',
+    debug:              'Hidden compass',
   }
 };
 
@@ -162,8 +380,25 @@ function setLang(l) {
   // Birth date label
   updateChildDateLabel();
 
-  // Download button
-  document.querySelector('.btn-download span').textContent = t.dl_btn;
+  // Download buttons
+  const dlLabel = document.querySelector('.btn-download-label');
+  if (dlLabel) dlLabel.textContent = t.dl_btn;
+  const dlBlankLabel = document.querySelector('.btn-download-blank-label');
+  if (dlBlankLabel) dlBlankLabel.textContent = t.dl_blank_btn;
+}
+
+/* ──────────────────────────────────────────────
+   Debug toggle — show live QR/N1 preview card
+────────────────────────────────────────────── */
+function toggleDebug() {
+  const on = document.getElementById('debugToggle').checked;
+  document.getElementById('qrCard').hidden = !on;
+}
+
+function pickFooterLang(sel) {
+  const v = sel.value;
+  if (v) setLang(v);
+  sel.selectedIndex = 0;
 }
 
 /* ──────────────────────────────────────────────
@@ -533,6 +768,7 @@ updateQR();
 function val(id)  { const e = document.getElementById(id); return e ? e.value : ''; }
 function chk(id)  { const e = document.getElementById(id); return e ? e.checked : false; }
 function radio(name) { const e = document.querySelector(`input[name="${name}"]:checked`); return e ? e.value : ''; }
+const _readers = { val, chk, radio };
 
 function fmtDate(s) {
   if (!s) return '';
@@ -543,7 +779,12 @@ function fmtDate(s) {
 /* ──────────────────────────────────────────────
    PDF Generation
 ────────────────────────────────────────────── */
-function generatePDF() {
+function generatePDF(opts) {
+  const blank = !!(opts && opts.blank);
+  // When blank, all form-reader calls return empty/false so the PDF renders as a clean hand-fillable form.
+  const val   = blank ? () => ''    : _readers.val;
+  const chk   = blank ? () => false : _readers.chk;
+  const radio = blank ? () => ''    : _readers.radio;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -759,7 +1000,7 @@ function generatePDF() {
 
   // Show selected slot inline
   let keepLabel = '';
-  if (permKeepSelected) {
+  if (!blank && permKeepSelected) {
     const parts = permKeepSelected.replace('keep_', '').split('_');
     const dayKey = parts[0];
     const periodKey = parts[1];
@@ -840,42 +1081,47 @@ function generatePDF() {
   ];
   footer.forEach(line => { doc.text(line, ML, y, { maxWidth: CW }); y += 4.5; });
 
-  // ── Embed form data in PDF ──
-  const compactData = buildCompactData();
-  const expandedData = expandCompactToObj(compactData);
-  const qrCodeStr = encodeQRBinary(compactData);
-
-  doc.setProperties({
+  // ── Embed form data in PDF (skipped for blank form) ──
+  const metaProps = {
     title: `Fiche de V\u0153ux \u2013 Petit N\u00e9mo ${CFG.year}`,
-    subject: JSON.stringify(expandedData),
     creator: 'Petit N\u00e9mo \u2013 Fiche de V\u0153ux',
-  });
+  };
+  if (!blank) {
+    const compactData = buildCompactData();
+    const expandedData = expandCompactToObj(compactData);
+    const qrCodeStr = encodeQRBinary(compactData);
+    metaProps.subject = JSON.stringify(expandedData);
 
-  // ── QR code (compact binary) on lower right ──
-  if (typeof QRious !== 'undefined') {
-    const qrPdf = new QRious({ size: 256, level: 'L', value: qrCodeStr });
-    const qrImg = qrPdf.toDataURL('image/png');
-    const qrSize = 25;
-    const qrX = PW - ML - qrSize;
-    const qrY = 297 - 10 - qrSize;
-    doc.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize);
+    // ── QR code (compact binary) on lower right ──
+    if (typeof QRious !== 'undefined') {
+      const qrPdf = new QRious({ size: 256, level: 'L', value: qrCodeStr });
+      const qrImg = qrPdf.toDataURL('image/png');
+      const qrSize = 25;
+      const qrX = PW - ML - qrSize;
+      const qrY = 297 - 10 - qrSize;
+      doc.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize);
 
-    // Import code text next to QR
-    tc(...C.muted); font('normal', 5);
-    doc.text('Code d\'import :', ML, qrY);
-    font('normal', 5.5); tc(...C.black);
-    const codeLines = doc.splitTextToSize(qrCodeStr, qrX - ML - 4);
-    doc.text(codeLines, ML, qrY + 4);
+      // Import code text next to QR
+      tc(...C.muted); font('normal', 5);
+      doc.text('Code d\'import :', ML, qrY);
+      font('normal', 5.5); tc(...C.black);
+      const codeLines = doc.splitTextToSize(qrCodeStr, qrX - ML - 4);
+      doc.text(codeLines, ML, qrY + 4);
+    }
   }
+  doc.setProperties(metaProps);
 
-  // Build filename: Fiche_Voeux_PetitNemo_${CFG.year}_{LastName}_{date}.pdf
-  const lastName = val('childLastName').trim().replace(/\s+/g, '_') || 'enfant';
+  // Build filename
   const today = new Date();
   const dd = String(today.getDate()).padStart(2, '0');
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const yyyy = today.getFullYear();
   const dateStr = `${yyyy}-${mm}-${dd}`;
-  doc.save(`Fiche_Voeux_PetitNemo_${CFG.year}_${lastName}_${dateStr}.pdf`);
+  const lastName = val('childLastName').trim().replace(/\s+/g, '_') || 'enfant';
+  const fname = blank
+    ? `Fiche_Voeux_PetitNemo_${CFG.year}_vierge.pdf`
+    : `Fiche_Voeux_PetitNemo_${CFG.year}_${lastName}_${dateStr}.pdf`;
+  doc.save(fname);
 }
 
 /* ──────────────────────────────────────────────
